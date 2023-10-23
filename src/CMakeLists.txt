@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.28)
+set( CMAKE_CXX_COMPILER "C:/MinGw2/i686-8.1.0-release-win32-dwarf-rt_v6-rev0/mingw32/bin/g++.exe" )
+set( CMAKE_C_COMPILER "C:/MinGw2/i686-8.1.0-release-win32-dwarf-rt_v6-rev0/mingw32/bin/gcc.exe" )
+project(Eureka)
+add_executable(Eureka board.cpp data.cpp engine.cpp eureka.cpp perft.cpp ui.cpp board.h data.h engine.h perft.h ui.h)
