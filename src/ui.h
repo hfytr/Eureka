@@ -1,4 +1,3 @@
-#include <windows.h>
 #include <string>
 #include "engine.h"
 using namespace std;

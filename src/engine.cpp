@@ -33,7 +33,7 @@ engine::engine(){
 }
 
 /// @brief scores a move in following order 1) best move from last pass of ID (if node is pv node), 2) transposition table hit, 3) captures sorted by MVVLVA (most valuable victim, least valuable attacker), 4) killer moves, 5) butterfly score
-    // butterfly score is meant to indicate the strength of positional moves. they are updated whenever a beta cutoff is caused by a non capture/promotion and are increased by depth^2 whenever such a beta cutoff occurs. depth^2 lowers impact of low-depth nodes
+/// butterfly score is meant to indicate the strength of positional moves. they are updated whenever a beta cutoff is caused by a non capture/promotion and are increased by depth^2 whenever such a beta cutoff occurs. depth^2 lowers impact of low-depth nodes
 /// @param m the move to score
 /// @param depth the depth of search (scoreMove always called by negaMac/search)
 /// @param killer killer moves
@@ -55,12 +55,12 @@ int32_t engine::scoreMove(uint16_t m, int32_t depth, pair<uint16_t,uint16_t> kil
 }
 
 /// @brief performs search at given depth + quiescent search
-    // quiescent search is infinite depth search which considers only captures/promotions to prevent the horizon effect
+///  quiescent search is infinite depth search which considers only captures/promotions to prevent the horizon effect
 /// @param depth the depth to search
 /// @param alpha current players best option - can be any distance up the tree
 /// @param beta opposing players best option - also can be any distance up the tree
-    // if any move is greater than beta, we immediately return, as the opposing player has a better option, and would simply make a better move higher in the tree, rendering current results useless
-// moves which cause a beta cutoff "killer moves" are likely to also be good no matter the opponents reply. we search these first in "cousin" nodes (nodes which share a grandparent)
+/// if any move is greater than beta, we immediately return, as the opposing player has a better option, and would simply make a better move higher in the tree, rendering current results useless
+/// moves which cause a beta cutoff "killer moves" are likely to also be good no matter the opponents reply. we search these first in "cousin" nodes (nodes which share a grandparent)
 /// @param killerOpp stores killer moves for opponent and is passed too, and used in child nodes
 /// @param killer killer moves for current posisiton and are searched early
 /// @param parentpv passed by the parent node to store current nodes pv
@@ -149,7 +149,7 @@ int32_t engine::negamax(int32_t depth, int32_t alpha, int32_t beta, pair<uint16_
 }
 
 /// @brief loops through all moves and searches with negamax, returning best move
-    // uses same search strategies as negamax
+///  uses same search strategies as negamax
 /// @param depth depth at which to search
 /// @return best move for given depth
 uint16_t engine::search(int32_t depth){

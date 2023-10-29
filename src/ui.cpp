@@ -5,10 +5,15 @@
 #include "board.h"
 #include "data.h"
 #include "engine.h"
+#include "perft.h"
 #include "ui.h"
 using namespace std;
 
 ui::ui(){
+    setPos(10,10);
+    cout << "hi";
+    int foo = 0;
+    /*
     bool running = true, pins = false;
     uint16_t m;
     moveList moves;
@@ -33,16 +38,11 @@ ui::ui(){
         e.b.makeMove(m);
         running = input == "stop" ? false : true;
         e.b.makeMove(e.getMove());
-    }
+    }*/
 }
 
 void ui::setPos(int32_t x, int32_t y){
-    COORD c;
-    c.X = x; c.Y = y;
-    SetConsoleCursorPosition(
-        GetStdHandle( STD_OUTPUT_HANDLE ),
-        c
-    );      
+    string s = "\033[" +  to_string(y) + ";" + to_string(x);
 }
 
 string ui::message(){
