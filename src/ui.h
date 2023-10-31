@@ -10,8 +10,9 @@ public:
 
 private:
     engine e;
-    void setPos(int32_t x, int32_t y);
+    void runGame(), runPerft();
+    inline void setPos(int32_t x, int32_t y);
     uint16_t shortFromAlgebraic(string a);
-    string message(), algebraicFromShort(uint16_t m), printpvs();
+    string message(bool showpv), algebraicFromShort(uint16_t m), printpvs();
 };
 #endif

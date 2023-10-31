@@ -1,2 +1,5 @@
-/.vscode
-/src/CMakeLists.txt
+build/
+.vscode/
+lichess-bot/
+runUCI.*
+uci.*

@@ -3,56 +3,85 @@
 #include <climits>
 #include<iostream>
 #include "board.h"
-#include "data.h"
+#include "constants.h"
 #include "engine.h"
 #include "perft.h"
 #include "ui.h"
 using namespace std;
 
 ui::ui(){
-    setPos(10,10);
-    cout << "hi";
-    int foo = 0;
-    /*
-    bool running = true, pins = false;
+    string input;
+    while (input != "S"){
+        system("clear");
+        cout << "Would you like to run perft (enter P), play a game (enter G), or stop (enter S)?\n--> ";
+        cin >> input;
+        if (input == "P")
+            runPerft();
+        else
+            runGame();
+    }
+}
+
+void ui::runPerft(){
+    system("clear");
+    perft p;
+    string _;
+    cout << "\nEnter anything to continue\n--> ";
+    cin >> _;
+}
+
+void ui::runGame(){
+    bool showpv;
+    system("clear");
+    bool running = true;
     uint16_t m;
     moveList moves;
     string input;
-    cout << "  What color would you like to play? (\"w\" or \"b\")?\n--->";
+    cout << "What starting position would you like (enter a FEN string)? Put START for default.\n--> ";
     cin >> input;
-    input = "w";
-    uint16_t engineMove;
-    if (input == "b"){
-        system("cls");
-        engineMove = e.getMove();
-        e.b.makeMove(engineMove);
-    }
+    if (input == "START")
+        input = START_FEN;
+    e.b = board(input);
+    system("clear");
+
+    cout << "Would you like to show what moves the engine considers at each depth (the Principal Variation at each depth). Enter y/n.\n--> ";
+    cin >> input;
+    showpv = input == "y";
+    system("clear");
+    
+    cout << "What color would you like to play? (\"w\" or \"b\")?\n--> ";
+    cin >> input;
+
+    if (input == (e.b.player ? "w" : "b"))
+        e.b.makeMove(e.getMove());
     while (running){
-        pins = false;
-        setPos(0,0);
-        system("cls");
-        cout << message();
-        setPos(2,16);
+        system("clear");
+        cout << message(showpv);
+        setPos(5,17);
         cin >> input;
         m = shortFromAlgebraic(input);
         e.b.makeMove(m);
         running = input == "stop" ? false : true;
         e.b.makeMove(e.getMove());
-    }*/
+    }
 }
 
-void ui::setPos(int32_t x, int32_t y){
-    string s = "\033[" +  to_string(y) + ";" + to_string(x);
+// ses ANSI escape sequences
+inline void ui::setPos(int32_t x, int32_t y){
+    string s = ("\33[" + to_string(y) + ";" + to_string(x) + "H");
+    cout << s;
 }
 
-string ui::message(){
+string ui::message(bool showpv){
     string s = "";
-    s += "-------- BOARD --------\n\n" + e.b.toString() + "\n-------- MOVE HISTORY --------\n  ";
+    s += "-------- BOARD --------\n\n" + e.b.toString() + "\n-------- MOVE HISTORY --------\n    ";
     for (int32_t i = 1; i <= e.b.gameLen; i++)
         s += algebraicFromShort(e.b.gameHist[i]) + " ";
-    s += "\n\n-------- INPUT NEXT MOVE (put \"stop\" to stop)--------\n  \n\n";
-    s += "-------- PRINCIPAL VARIATION --------\n";
-    s += printpvs();
+    s += "\n\n-------- INPUT NEXT MOVE (put \"stop\" to stop)--------\n--> \n\n";
+    if (showpv){
+        s += "-------- PRINCIPAL VARIATION --------\n";
+        s += printpvs();
+    }
     return s;
 }
 
@@ -101,7 +130,7 @@ string ui::algebraicFromShort(uint16_t m){
 string ui::printpvs(){
     string s = "";
     for (int32_t i = 1; i < e.pv.size(); i++){
-        s += "  ";
+        s += "    ";
         for (int32_t j = 0; j < e.pv[i].size(); j++)
             s += algebraicFromShort(e.pv[i][j]) + "(" + to_string(e.pv[i][j]) + (j != e.pv[i].size()-1 ? "), " : ") : ");
         s += to_string(e.pveval[i]);

@@ -3,7 +3,7 @@
 #include <climits>
 #include <iostream>
 #include "board.h"
-#include "data.h"
+#include "constants.h"
 using namespace std;
 
 void moveList::push(uint16_t m){

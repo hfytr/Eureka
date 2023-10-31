@@ -1,6 +1,6 @@
 #include <cstdint>
-#ifndef DATA_H
-#define DATA_H
+#ifndef constants_H
+#define constants_H
 #define PROMOTE 1
 #define EP 2
 #define CASTLE 3

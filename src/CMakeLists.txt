@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.27)
+project(EurekaTerminal)
+add_library(EurekaCore board.cpp constants.cpp engine.cpp board.h constants.h engine.h)
+add_executable(EurekaTerminal perft.cpp runInTerminal.cpp ui.cpp perft.h ui.h)
+target_link_libraries(EurekaTerminal PUBLIC EurekaCore)
+#add_executable(EurekaUCI runUci.cpp uci.cpp uci.h)
+#target_link_libraries(EurekaUCI PUBLIC EurekaCore)

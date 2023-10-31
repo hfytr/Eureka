@@ -1,7 +1,7 @@
 #include <vector>
 #include <string>
 #include <climits>
-#include "data.h"
+#include "constants.h"
 using namespace std;
 
 #ifndef BOARD_H

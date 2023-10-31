@@ -6,7 +6,7 @@
 #include <chrono>
 #include <climits>
 #include "board.h"
-#include "data.h"
+#include "constants.h"
 using namespace std;
 using namespace std::chrono;
 
@@ -35,18 +35,21 @@ public:
 
 class engine {
 public:
-    board b = board();
+    board b;
+    int64_t length, nodes, mode;
     vector<vector<uint16_t>> pv;
     vector<int32_t> pveval;
     time_point<steady_clock> start;
     int32_t milli = 2 * 1000, fullDepth = 0;
     TT tt = TT(TTSIZE);
     int32_t butterfly[2][64][64] = {}, count = 0;
+    bool over;
 
     int32_t scoreMove(uint16_t m, int32_t depth, pair<uint16_t,uint16_t> killer, bool ispv);
     int32_t negamax(int32_t depth, int32_t alpha, int32_t beta, pair<uint16_t,uint16_t> killerOpp, pair<uint16_t,uint16_t> &killer, vector<uint16_t> &parentpv, bool ispv);
     uint16_t search(int32_t depth);
-    uint16_t getMove();
+    uint16_t getMove(string mode = "time", int32_t length_ = 2000);
+    bool checkOver();
     engine();
 };
 #endif
