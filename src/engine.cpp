@@ -1,4 +1,5 @@
 #include <vector>
+#include <map>
 #include <string>
 #include <chrono>
 #include <climits>
@@ -7,7 +8,6 @@
 #include "constants.h"
 #include "engine.h"
 using namespace std;
-using namespace std::chrono;
 
 TT::TT(int32_t s){
     size = s;
@@ -29,7 +29,13 @@ TTnode TT::get(uint64_t hash){
     return container[i][hash%size];
 }
 
-engine::engine(){}
+void TT::clear(){
+    for (int32_t i = 0; i < size; i++){
+        container[0][i] = TTnode();
+        container[1][i] = TTnode();
+    }
+    trueLen = 0;
+}
 
 /// @brief scores a move in following order 1) best move from last pass of ID (if node is pv node), 2) transposition table hit, 3) captures sorted by MVVLVA (most valuable victim, least valuable attacker), 4) killer moves, 5) butterfly score
 /// butterfly score is meant to indicate the strength of positional moves. they are updated whenever a beta cutoff is caused by a non capture/promotion and are increased by depth^2 whenever such a beta cutoff occurs. depth^2 lowers impact of low-depth nodes
@@ -54,16 +60,17 @@ int32_t engine::scoreMove(uint16_t m, int32_t depth, pair<uint16_t,uint16_t> kil
 }
 
 bool engine::checkOver(){
-    switch (mode){
-        case 0:{
+    switch (t.mode){
+        case 0:{    
             auto passed = steady_clock::now()-start;
-            return duration_cast<chrono::milliseconds>(passed).count() > length;
+            return duration_cast<chrono::milliseconds>(passed).count() > t.length;
         }
         case 1:
-            return nodes > length;
+            return nodes > t.length;
         case 2:
-            return fullDepth > length;
+            return fullDepth > t.length;
     }
+    return true;
 }
 
 /// @brief performs search at given depth + quiescent search
@@ -164,30 +171,29 @@ int32_t engine::negamax(int32_t depth, int32_t alpha, int32_t beta, pair<uint16_
 /// @param depth depth at which to search
 /// @return best move for given depth
 uint16_t engine::search(int32_t depth){
-    moveList moves = b.genMoves(false,false);
     TTnode ttEntry = TTnode(b.zobrist,0,0,b.gameLen,depth);
     int32_t j , i, curInd, cur, alpha = INT_MIN+1;
     uint16_t m;
     xMove best;
     vector<int32_t> score;
-    score.resize(moves.len);
+    score.resize(t.moves.len);
     pair<uint16_t,uint16_t> initKiller (0,0);
     vector<uint16_t> childpv;
     vector<uint16_t> nextpv;
     nextpv.resize(depth);
     bool legal;
 
-    for (i = 0; i < moves.len; i++)
-        score[i] = scoreMove(moves[i],depth,initKiller,false);
+    for (i = 0; i < t.moves.len; i++)
+        score[i] = scoreMove(t.moves[i],depth,initKiller,false);
 
-    for (i = 0; i < moves.len; i++){
+    for (i = 0; i < t.moves.len; i++){
         curInd = i;
-        for (j = i+1; j < moves.len; j++)
+        for (j = i+1; j < t.moves.len; j++)
             if (score[j] > score[curInd])
                 curInd = j;
-        m = moves[curInd];
+        m = t.moves[curInd];
         swap(score[i],score[curInd]);
-        moves.swap(i,curInd);
+        t.moves.swap(i,curInd);
 
         legal = !b.makeMove(m);
         if (!legal){
@@ -219,22 +225,19 @@ uint16_t engine::search(int32_t depth){
 }
 
 /// @brief performs iterative deepening (ID), searching at increasing depths until time is exhausted
+/// @param t_ contains the list of mvoes to consider, the cutoff mode (nodes/time/depth), and information about the time control
 /// @return best move in position
-uint16_t engine::getMove(string mode_, int32_t length_){
-    length = length_;
-    if (mode_ == "time")
-        mode = 0;
-    else if (mode_ == "nodes")
-        mode = 1;
-    else
-        mode = 2;
+uint16_t engine::getMove(task t_){
+    t = t_;
+    if (t.moves.len == 0)
+        t.moves = b.genMoves(false,false);
     nodes = 0;
     system("clear");
     start = steady_clock::now();
     pv.clear();
     pveval.clear();
     pv.push_back(vector<uint16_t>());
-    pveval.push_back(0);
+    pveval.push_back(0);    
     uint16_t best;
     fullDepth = 1;
     over = false;

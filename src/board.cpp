@@ -163,6 +163,48 @@ uint64_t pawnMask(int32_t sq, bool player){
     return tr;
 }
 
+uint16_t shortFromAlgebraic(string a, board* b){
+    if (a == "stop")
+        return 0;
+
+    int32_t sq1 = int32_t(a[0])-int32_t('a') + (int32_t(a[1])-int32_t('1'))*8, sq2 = int32_t(a[2])-int32_t('a') + (int32_t(a[3])-int32_t('1'))*8, prom = 0, spec = 0;
+    if (a.length() > 4){
+        spec = PROMOTE;
+        switch (a[4]) {
+            case 'q':{
+                prom = 3;
+                break;
+            }
+            case 'n':{
+                prom = 1;
+                break;
+            }
+            case 'r':{
+                prom = 0;
+                break;
+            }
+            case 'b':{
+                prom = 2;
+                break;
+            }
+        }
+    }
+    int32_t fromPiece = pType(b->sqs[sq1]), toPiece = pType(b->sqs[sq2]);
+    if (fromPiece == 1 && toPiece == 0 && col(sq1) - col(sq2) != 0)
+        spec = EP;
+    if (fromPiece == 6 && abs(sq1-sq2) == 2)
+        spec = CASTLE;
+    return getShort(sq1,sq2,prom,spec);
+}
+
+string algebraicFromShort(uint16_t m){
+    int32_t sq1 = square1(m), sq2 = square2(m), prom = promotion(m), spec = special(m);
+    string s = {char(col(sq1)+int32_t('a')), char(row(sq1)+int32_t('1')), char(col(sq2)+int32_t('a')), char(row(sq2)+int32_t('1'))};
+    if (spec == PROMOTE)
+        s += int2Letter[prom+7];
+    return s;
+}
+
 // FEN notation: https://en.wikipedia.org/wiki/Forsyth–Edwards_Notation
 board::board(string fen){
     // maps letter to corresponding piece number

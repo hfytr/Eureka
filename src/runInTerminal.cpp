@@ -1,4 +1,4 @@
-#include "ui.h"
+#include "terminal.h"
 using namespace std;
 /*
  _/|
@@ -8,5 +8,5 @@ using namespace std;
 )___(
 */
 int main(){
-    ui u;
+    terminal t;
 }

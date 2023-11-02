@@ -4,15 +4,16 @@ using namespace std;
 
 #ifndef UI_H
 #define UI_H
-class ui {
+class terminal {
 public:
-    ui();
+    terminal();
+    static uint16_t shortFromAlgebraic(string a, board* b);
+    static string algebraicFromShort(uint16_t m);
 
 private:
     engine e;
     void runGame(), runPerft();
     inline void setPos(int32_t x, int32_t y);
-    uint16_t shortFromAlgebraic(string a);
-    string message(bool showpv), algebraicFromShort(uint16_t m), printpvs();
+    string message(bool showpv), printpvs();
 };
 #endif

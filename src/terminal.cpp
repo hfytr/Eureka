@@ -6,10 +6,10 @@
 #include "constants.h"
 #include "engine.h"
 #include "perft.h"
-#include "ui.h"
+#include "terminal.h"
 using namespace std;
 
-ui::ui(){
+terminal::terminal(){
     string input;
     while (input != "S"){
         system("clear");
@@ -22,7 +22,7 @@ ui::ui(){
     }
 }
 
-void ui::runPerft(){
+void terminal::runPerft(){
     system("clear");
     perft p;
     string _;
@@ -30,7 +30,7 @@ void ui::runPerft(){
     cin >> _;
 }
 
-void ui::runGame(){
+void terminal::runGame(){
     bool showpv;
     system("clear");
     bool running = true;
@@ -52,27 +52,29 @@ void ui::runGame(){
     cout << "What color would you like to play? (\"w\" or \"b\")?\n--> ";
     cin >> input;
 
+    task t;
+
     if (input == (e.b.player ? "w" : "b"))
-        e.b.makeMove(e.getMove());
+        e.b.makeMove(e.getMove(t));
     while (running){
         system("clear");
         cout << message(showpv);
         setPos(5,17);
         cin >> input;
-        m = shortFromAlgebraic(input);
+        m = shortFromAlgebraic(input, &e.b);
         e.b.makeMove(m);
         running = input == "stop" ? false : true;
-        e.b.makeMove(e.getMove());
+        e.b.makeMove(e.getMove(t));
     }
 }
 
 // ses ANSI escape sequences
-inline void ui::setPos(int32_t x, int32_t y){
+inline void terminal::setPos(int32_t x, int32_t y){
     string s = ("\33[" + to_string(y) + ";" + to_string(x) + "H");
     cout << s;
 }
 
-string ui::message(bool showpv){
+string terminal::message(bool showpv){
     string s = "";
     s += "-------- BOARD --------\n\n" + e.b.toString() + "\n-------- MOVE HISTORY --------\n    ";
     for (int32_t i = 1; i <= e.b.gameLen; i++)
@@ -85,7 +87,7 @@ string ui::message(bool showpv){
     return s;
 }
 
-uint16_t ui::shortFromAlgebraic(string a){
+uint16_t terminal::shortFromAlgebraic(string a, board* b){
     if (a == "stop")
         return 0;
 
@@ -111,7 +113,7 @@ uint16_t ui::shortFromAlgebraic(string a){
             }
         }
     }
-    int32_t fromPiece = pType(e.b.sqs[sq1]), toPiece = pType(e.b.sqs[sq2]);
+    int32_t fromPiece = pType(b->sqs[sq1]), toPiece = pType(b->sqs[sq2]);
     if (fromPiece == 1 && toPiece == 0 && col(sq1) - col(sq2) != 0)
         spec = EP;
     if (fromPiece == 6 && abs(sq1-sq2) == 2)
@@ -119,7 +121,7 @@ uint16_t ui::shortFromAlgebraic(string a){
     return getShort(sq1,sq2,prom,spec);
 }
 
-string ui::algebraicFromShort(uint16_t m){
+string terminal::algebraicFromShort(uint16_t m){
     int32_t sq1 = square1(m), sq2 = square2(m), prom = promotion(m), spec = special(m);
     string s = {char(col(sq1)+int32_t('a')), char(row(sq1)+int32_t('1')), char(col(sq2)+int32_t('a')), char(row(sq2)+int32_t('1'))};
     if (spec == PROMOTE)
@@ -127,7 +129,7 @@ string ui::algebraicFromShort(uint16_t m){
     return s;
 }
 
-string ui::printpvs(){
+string terminal::printpvs(){
     string s = "";
     for (int32_t i = 1; i < e.pv.size(); i++){
         s += "    ";

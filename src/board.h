@@ -122,4 +122,8 @@ private:
     void pushMove(uint16_t m), genPawnMoves(), genRookMoves(), genKnightMoves(), genBishopMoves(), genQueenMoves(), genKingMoves(), genPinMasks();
 };
 
+uint16_t shortFromAlgebraic(string a, board* b);
+
+string algebraicFromShort(uint16_t m);
+
 #endif
