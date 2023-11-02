@@ -34,7 +34,7 @@ void uci::takeInput(){
                 e.debug = cur[1] == "on";
                 break;
             }
-            case 2:{ // isready
+            /*case 2:{ // isready
                 unique_lock<std::mutex> lock{mxReady};
                 condReady.wait(
                     lock,
@@ -43,7 +43,7 @@ void uci::takeInput(){
                 lock.unlock();
                 cout << "readyok\n";
                 break;
-            }
+            }*/
             case 3:{ // setoption
                 break;
             }
@@ -60,13 +60,14 @@ void uci::takeInput(){
                 break;
             }
             case 6:{ // go
+                lock_guard<mutex> lock{mxWaitForTask};
                 task t;
                 string token;
                 for (int32_t i = 1; i < cur.size(); i++){
                     if (gotoken.count(cur[i]) == 1)
                         token = cur[i];
                     else {
-                        switch(gotoken.at(cur[i])){
+                        switch(gotoken.at(token)){
                             case 0:{
                                 t.moves.push(shortFromAlgebraic(cur[i],&e.b));
                                 break;
@@ -136,6 +137,7 @@ void uci::processInput(){
             lock,
             [this] {return !tasks.empty();}
         );
+        cout << 'h';
         lock.unlock();
         cur = tasks.front();
 
