@@ -1,6 +1,7 @@
 #ifndef UCI_H
 #define UCI_H
 #include "engine.h"
+#include "board.h"
 #include <queue>
 #include <condition_variable>
 #include <mutex>
@@ -10,9 +11,10 @@ public:
     void processInput(), takeInput();
 private:
     engine e;
+    bool over;
     queue<task> tasks;
     vector<string> readCommand();
     condition_variable condWaitForTask, condReady;
-    mutex mxWaitForTask, mxReady;
+    mutex mx;
 };
 #endif

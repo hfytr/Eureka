@@ -13,6 +13,7 @@ int main(){
     uci u;
     thread inputThread(&uci::takeInput,&u);
     thread workerThread(&uci::processInput,&u);
+    workerThread.detach();
     inputThread.join();
     return 0;
 }

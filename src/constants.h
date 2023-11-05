@@ -9,9 +9,10 @@
 #define ZEP 773
 #define TTSIZE 100000
 #define AGETOLERANCE 5
-#define MINMVVLVA INT_MAX - 2000000
+#define MINMVVLVA MAX32 - 2000000
 #define START_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-#define UCIQUIT 0
+#define MIN32 (INT_MIN+1)
+#define MAX32 -MIN32
 
 extern int32_t DeBruijnLookup[64];
 extern int32_t rookShift[64];

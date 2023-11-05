@@ -616,8 +616,8 @@ int32_t* egpestoPre[6] = {
 int32_t mgpesto[6][64];
 int32_t egpesto[6][64];
 int32_t phaseInc[6] = {0,2,1,1,4,0};
-int32_t mgval[6] = {82,477,337,365,1025,INT_MAX};
-int32_t egval[6] = {94,512,281,297,936,INT_MAX};
+int32_t mgval[6] = {82,477,337,365,1025,MAX32};
+int32_t egval[6] = {94,512,281,297,936,MAX32};
 char int2Letter[14] = {'.','P','R','N','B','Q','K',' ','p','r','n','b','q','k'};
 uint64_t zrn[781] = {
     0x9D39247E33776D41, 0x2AF7398005AAA5C7, 0x44DB015024623547, 0x9C15F73E62A76AE2,

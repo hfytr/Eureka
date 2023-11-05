@@ -37,6 +37,15 @@ void TT::clear(){
     trueLen = 0;
 }
 
+int32_t engine::initialTime(){
+    int32_t optimalTime;
+    if (t.movestogo > 0)
+        optimalTime = t.increment[b.player]/2 + t.timeLeft[b.player]/t.movestogo;
+    else
+        optimalTime = t.increment[b.player]/2 + t.timeLeft[b.player]/20;
+    return min(optimalTime, t.timeLeft[b.player]-20);
+}
+
 /// @brief scores a move in following order 1) best move from last pass of ID (if node is pv node), 2) transposition table hit, 3) captures sorted by MVVLVA (most valuable victim, least valuable attacker), 4) killer moves, 5) butterfly score
 /// butterfly score is meant to indicate the strength of positional moves. they are updated whenever a beta cutoff is caused by a non capture/promotion and are increased by depth^2 whenever such a beta cutoff occurs. depth^2 lowers impact of low-depth nodes
 /// @param m the move to score
@@ -46,7 +55,7 @@ void TT::clear(){
 /// @return the score of a move (arbitrary number, used relatively)
 int32_t engine::scoreMove(uint16_t m, int32_t depth, pair<uint16_t,uint16_t> killer, bool ispv){
     if (tt.get(b.zobrist).m == m)
-        return INT_MAX-1;
+        return MAX32-1;
 
     bool capture = b.sqs[square2(m)] != 0;
     
@@ -60,6 +69,8 @@ int32_t engine::scoreMove(uint16_t m, int32_t depth, pair<uint16_t,uint16_t> kil
 }
 
 bool engine::checkOver(){
+    if (forceStop)
+        return true;
     switch (t.mode){
         case 0:{    
             auto passed = steady_clock::now()-start;
@@ -141,6 +152,9 @@ int32_t engine::negamax(int32_t depth, int32_t alpha, int32_t beta, pair<uint16_
             return beta;
         }
 
+        if (cur == MAX32)
+            return MAX32;
+
         if (cur > alpha){
             best = m;
             alpha = cur;
@@ -157,7 +171,7 @@ int32_t engine::negamax(int32_t depth, int32_t alpha, int32_t beta, pair<uint16_
     
     if (finished && depth > 0){
         if (b.attacked())
-            return INT_MIN;
+            return MIN32;
         return 0;
     }
 
@@ -172,7 +186,7 @@ int32_t engine::negamax(int32_t depth, int32_t alpha, int32_t beta, pair<uint16_
 /// @return best move for given depth
 uint16_t engine::search(int32_t depth){
     TTnode ttEntry = TTnode(b.zobrist,0,0,b.gameLen,depth);
-    int32_t j , i, curInd, cur, alpha = INT_MIN+1;
+    int32_t j , i, curInd, cur, alpha = MIN32;
     uint16_t m;
     xMove best;
     vector<int32_t> score;
@@ -194,6 +208,8 @@ uint16_t engine::search(int32_t depth){
         m = t.moves[curInd];
         swap(score[i],score[curInd]);
         t.moves.swap(i,curInd);
+        if (i == 15)
+            int foo = 0;
 
         legal = !b.makeMove(m);
         if (!legal){
@@ -202,8 +218,18 @@ uint16_t engine::search(int32_t depth){
         }
 
         childpv.clear();
-        cur = -negamax(depth-1, INT_MIN+1, -alpha, initKiller, initKiller, childpv, fullDepth != 1 && m == pv.back()[fullDepth-depth]);
+        cur = -negamax(depth-1, MIN32, -alpha, initKiller, initKiller, childpv, pv.back().size() > fullDepth-depth && m == pv.back()[fullDepth-depth]);
         b.unmakeMove();
+
+        if (debug)
+            cout << "info currmove " << algebraicFromShort(m) << " currmovenumber " << i << " score cp " << alpha << endl;
+
+        if (cur == MAX32){
+            alpha = cur;
+            best.first = MAX32;
+            best.second = m;
+            break;
+        }
 
         if (cur > best.first || i == 0){
             best = xMove (cur, m);
@@ -228,11 +254,15 @@ uint16_t engine::search(int32_t depth){
 /// @param t_ contains the list of mvoes to consider, the cutoff mode (nodes/time/depth), and information about the time control
 /// @return best move in position
 uint16_t engine::getMove(task t_){
+    forceStop = false;
     t = t_;
+    if (t.mode == -1){
+        t.mode = 0;
+        t.length = initialTime();
+    }
     if (t.moves.len == 0)
         t.moves = b.genMoves(false,false);
     nodes = 0;
-    system("clear");
     start = steady_clock::now();
     pv.clear();
     pveval.clear();
@@ -244,6 +274,17 @@ uint16_t engine::getMove(task t_){
     while (!over){
         best = search(fullDepth);
         fullDepth++;
+        auto passed = steady_clock::now()-start;
+        cout << "info depth " << fullDepth << " nodes " << nodes << " time " << duration_cast<milliseconds>(passed).count() << " nps " << nodes/(duration_cast<seconds>(passed).count()+1) << " score cp " << pveval.back() << endl;
+        cout << "info pv";
+        for (int32_t i = 0; i < pv.back().size(); i++){
+            if (pv.back()[i] == 0)
+                break;
+            cout << ' ' << algebraicFromShort(pv.back()[i]);
+        }
+        cout << endl;
+        if (pveval.back() == MAX32 || pveval.back() == MIN32)
+            return best;
     }
     tt.trueLen += 2;
     return best;

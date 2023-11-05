@@ -312,7 +312,7 @@ board::board(string fen){
 }
 
 bool board::canCastle(int32_t i, int32_t j){
-    return castle[i][j] == INT_MAX;
+    return castle[i][j] == MAX32;
 }
 
 // checks whether the current position has occurred twice (excluding current position) for 3 move repetition
@@ -501,7 +501,7 @@ void board::unmakeMove(){
     for (int32_t i = 0; i < 2; i++){
         for (int32_t j = 0; j < 2; j++){
             if (castle[i][j] == gameLen){
-                castle[i][j] = INT_MAX;
+                castle[i][j] = MAX32;
                 zobrist ^= zrn[ZCASTLE + i*2 + j];
             }
         }

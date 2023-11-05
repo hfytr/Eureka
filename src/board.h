@@ -90,9 +90,9 @@ public:
     // random numbers are assigned to each feature of a position. for example white can castle kingside, it is blacks move, there is a black knight on a1 are all features
     // the zobrist key is obtained by xoring all features of a position
     uint64_t zobrist;
-    // castle[i][j] is the turn on which ith player lost the right to castle on the jth side. castle[i][j] = INT_MAX if castling is available, and -1 if castling was never available.
+    // castle[i][j] is the turn on which ith player lost the right to castle on the jth side. castle[i][j] = MAX32 if castling is available, and -1 if castling was never available.
     // this is necessary for unmaking moves
-    int32_t castle[2][2] = {INT_MAX,INT_MAX,INT_MAX,INT_MAX};
+    int32_t castle[2][2] = {MAX32,MAX32,MAX32,MAX32};
     uint16_t gameHist[5898] = {};
     int32_t captured[5898] = {};
     int32_t gameLen = 0;
