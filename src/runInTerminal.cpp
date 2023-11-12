@@ -1,5 +1,5 @@
 #include "terminal.h"
-using namespace std;
+
 /*
  _/|
 // o\

@@ -1,6 +1,6 @@
 #ifndef UCI_H
 #define UCI_H
-#include "engine.h"
+#include "search.h"
 #include "board.h"
 #include <queue>
 #include <condition_variable>

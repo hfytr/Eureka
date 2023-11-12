@@ -743,6 +743,8 @@ bool board::attacked(int32_t sq){
         return true;
     if (bishopAttacks(sq) & (bitbs[opp(player)][4] | bitbs[opp(player)][5]))
         return true;
+    if (kingAttacks(sq) & bitbs[opp(player)][6])
+        return true;
     return false;
 }
 

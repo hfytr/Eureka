@@ -1,5 +1,5 @@
 #include <string>
-#include "engine.h"
+#include "search.h"
 using namespace std;
 
 #ifndef UI_H

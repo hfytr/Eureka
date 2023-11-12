@@ -4,7 +4,7 @@
 #include<iostream>
 #include "board.h"
 #include "constants.h"
-#include "engine.h"
+#include "search.h"
 #include "perft.h"
 #include "terminal.h"
 using namespace std;

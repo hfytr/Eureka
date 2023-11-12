@@ -1,12 +1,13 @@
-#include "engine.h"
+#include "search.h"
 #include "uci.h"
 #include "board.h"
 #include <queue>
 #include <map>
 #include <condition_variable>
+#include <cstdint>
 #include <mutex>
 #include <iostream>
-using namespace std;
+
 
 vector<string> uci::readCommand(){
     vector<string> tr;
@@ -55,12 +56,12 @@ void uci::takeInput(){
                 int32_t i;
                 if (cur[1] == "startpos"){
                     fen = START_FEN;
-                    i = 3;
+                    i = 2;
                 } else
                     for (i = 2; i < 8; i++)
                         fen += cur[i] + (i == 7 ? "" : " ");
                 e.b = board(fen);
-                for (i = i; i < cur.size(); i++)    
+                for (i = ++i; i < cur.size(); i++)
                     e.b.makeMove(shortFromAlgebraic(cur[i], &e.b));
                 break;
             }
