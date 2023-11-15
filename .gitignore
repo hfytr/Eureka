@@ -1,4 +1,6 @@
+books/
+cutechess/
+lichess-bot/
+SPRT/
 build/
 .vscode/
-lichess-bot/
-.cutechess/

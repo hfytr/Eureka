@@ -8,7 +8,6 @@
 #include <mutex>
 #include <iostream>
 
-
 vector<string> uci::readCommand(){
     vector<string> tr;
     string cur;
@@ -29,6 +28,7 @@ void uci::takeInput(){
         switch(cmdnum.at(cur[0])){
             case 0:{ // uci
                 cout << "id name Eureka 1.0\nid author Archim Jhunjhunwala\nuciok" << endl;
+                break;
             }
             case 1:{ // debug
                 e.debug = cur[1] == "on";

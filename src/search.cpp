@@ -140,11 +140,13 @@ int32_t engine::negamax(int32_t depth, int32_t alpha, int32_t beta, pair<uint16_
                 alpha = cur;
                 entry.type = PV_NODE;
             }
-            parentpv.clear();
-            parentpv.resize(childpv.size()+1);
-            parentpv[0] = m;
-            for (j = 0; j < childpv.size(); j++)
-                parentpv[j+1] = childpv[j];
+            if (depth > 0){
+                parentpv.clear();
+                parentpv.resize(childpv.size()+1);
+                parentpv[0] = m;
+                for (j = 0; j < childpv.size(); j++)
+                    parentpv[j+1] = childpv[j];
+            }
         }
 
         gameOver = false;
@@ -198,6 +200,7 @@ uint16_t engine::search(int32_t depth){
             b.unmakeMove();
             continue;
         }
+
         childpv.clear();
         cur = -negamax(depth-1, best.eval, MAX32, initKiller, initKiller, childpv, pv.back().size() > fullDepth-depth && m == pv.back()[fullDepth-depth]);
         b.unmakeMove();

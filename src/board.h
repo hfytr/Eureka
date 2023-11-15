@@ -52,7 +52,7 @@ string bin(uint64_t n);
 #define special(m) ((int32_t) (m & 64512) >> 14)
 
 // function to generate a uint16 given move info
-inline uint16_t getShort(int32_t square1, int32_t square2, int32_t promote=0, int32_t special=0){
+inline uint16_t getShort(uint32_t square1, uint32_t square2, uint32_t promote=0, uint32_t special=0){
     return (uint16_t) (square1 | square2 << 6 | promote << 12 | special << 14); 
 }
 

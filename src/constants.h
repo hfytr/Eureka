@@ -9,10 +9,10 @@
 #define ZEP 773
 #define TTSIZE 100000
 #define AGETOLERANCE 5
-#define MINMVVLVA MAX32 - 2000000
 #define START_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 #define MIN32 (INT_MIN+1)
-#define MAX32 -MIN32
+#define MAX32 (INT_MAX)
+#define MINMVVLVA (MAX32 - 2000000)
 #define CUT_NODE 0
 #define ALL_NODE 1
 #define PV_NODE 2

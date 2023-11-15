@@ -459,7 +459,7 @@ void board::unmakeMove(){
         toggle(bitbs[opp(player)][pType(capt)], sq2);
         toggle(bitbs[opp(player)][0], sq2);
         zobrist ^= zrn[(pType(capt)-1 + capt/7*6)*64+sq2];
-        phase += phaseInc[capt-1];
+        phase += phaseInc[pType(capt)-1];
     }
     // in the case of a promotion, the piece which should be removed from sq2 will be a pawn, and not the fromPiece
     if (spec != PROMOTE){
@@ -477,7 +477,7 @@ void board::unmakeMove(){
             zobrist ^= zrn[(prom-1+player*6)*64+sq2];
             toggle(bitbs[player][prom], sq2);
             sqs[sq1] = 1 + (player ? 7 : 0);
-            phase -= phaseInc[prom-1] + 1;
+            phase -= phaseInc[prom-1] - 1;
             break;
         }
         case CASTLE: {
@@ -644,7 +644,7 @@ void board::genKingMoves(){
     while (attack)
         pushMove(getShort(i,poplsb(attack)));
     
-    if (!legal || !attacked(i)){
+    if (!attacked(i)){
         if (canCastle(player,1))
             if (!attacked(i+1) && !attacked(i+2) && (bitbs[1][0] | bitbs[0][0]) << 1+opp(player)*56 >> 62 == 0)
                 pushMove(getShort(i,i+2,0,CASTLE));
@@ -665,7 +665,7 @@ void board::genPawnMoves(){
         attacks = pawnAttacks(sq);
         if (sqs[sq+shift] == 0 && !quiesce){
             toggle(attacks, sq+shift);
-            if (sqs[sq+2*shift] == 0 && row(sq) == (player ? 6 : 1))
+            if (row(sq) != (player ? 1 : 6) && sqs[sq+2*shift] == 0 && row(sq) == (player ? 6 : 1))
                 toggle(attacks, sq + 2*shift);
         }
         if (1ULL << sq & pins[1])
@@ -714,6 +714,8 @@ void board::genPinMasks(){
 }
 
 moveList board::genMoves(bool legal_, bool quiesce_){
+    if (gameLen == 3 && gameHist[1] == 1032 && gameHist[2] == 919 && gameHist[3] == 1097)
+        cout << phase << endl << toString();
     legal = legal_;
     quiesce = quiesce_;
     moves = moveList();
