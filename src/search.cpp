@@ -248,7 +248,7 @@ uint16_t engine::getMove(task t_){
     start = steady_clock::now();
     pv.clear();
     pveval.clear();
-    pv.push_back(vector<uint16_t>());
+    pv.push_back(vector<uint16_t>(t.moves[0]));
     pveval.push_back(0);    
     uint16_t best;
     fullDepth = 1;
