@@ -39,7 +39,7 @@ public:
     vector<int32_t> pveval;
     time_point<steady_clock> start;
     int32_t milli = 2 * 1000, fullDepth = 0, selDepth = 0;
-    TT tt = TT(TTSIZE);
+    TT tt = TT(DEFAULTTTSIZE);
     int32_t butterfly[2][64][64] = {}, count = 0;
     bool over, debug = false, forceStop;
 

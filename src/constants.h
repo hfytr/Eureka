@@ -7,7 +7,7 @@
 #define ZPLAYER 768
 #define ZCASTLE 769
 #define ZEP 773
-#define TTSIZE 100000
+#define DEFAULTTTSIZE 1
 #define AGETOLERANCE 5
 #define START_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 #define MIN32 (INT_MIN+1)
@@ -16,6 +16,7 @@
 #define CUT_NODE 0
 #define ALL_NODE 1
 #define PV_NODE 2
+#define NUM_BUCKETS 4
 
 extern int32_t DeBruijnLookup[64];
 extern int32_t rookShift[64];

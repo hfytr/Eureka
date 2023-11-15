@@ -76,7 +76,7 @@ int32_t engine::negamax(int32_t depth, int32_t alpha, int32_t beta, pair<uint16_
         return entry.eval;
 
     moveList moves = b.genMoves(false, depth <= 0);
-    TTnode ttEntry = TTnode(b.zobrist,0,0,b.gameLen,max(depth,0),ALL_NODE);
+    TTnode ttEntry = TTnode(b.zobrist,0,0,max(depth,0),ALL_NODE);
     int32_t j , i, curInd, cur;
     xMove best;
     uint16_t m;
@@ -252,7 +252,7 @@ uint16_t engine::getMove(task t_){
     pveval.push_back(0);    
     uint16_t best;
     fullDepth = 1;
-    over = false;
+    over = false;   
     while (!over){
         best = search(fullDepth);
         auto passed = steady_clock::now()-start;
@@ -269,6 +269,5 @@ uint16_t engine::getMove(task t_){
             return best;
         over = checkOver();
     }
-    tt.trueLen += 2;
     return best;
 }

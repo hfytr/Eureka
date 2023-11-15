@@ -2,30 +2,42 @@
 #include "constants.h"
 #include <cstdint>
 
-TT::TT(int32_t s){
-    size = s;
-    container[0] = new TTnode[size];
-    container[1] = new TTnode[size];
+TTnode TTbucket::operator[](int32_t i){
+    return buckets[i];
 }
 
-// container[0] contains the newest entry's, while container[1] contains entry's with higher depth
-// higher depth entry's will be deleted if they are too old
+TT::TT(uint32_t s){
+    size = s*1000000/(sizeof(TTnode)*NUM_BUCKETS);
+    container.resize(size);
+    clear();
+}
+
+void TT::resize(uint32_t s){
+    size = s*1000000/(sizeof(TTnode)*NUM_BUCKETS);
+    container.resize(size);
+}
+
 void TT::push(TTnode a){
-    int32_t i = (a.depth <= container[0][a.hash%size].depth) || (a.age - container[0][a.hash%size].age <= AGETOLERANCE);
-    container[i][a.hash%size] = a;
+    int32_t minDepth;
+    for (int32_t i = 0; i < NUM_BUCKETS; i++){
+        if (container[a.hash%size][i].hash == 0){
+            container[a.hash%size][i] = a;
+            return;
+        } else if (i == 0 || container[a.hash%size][i].depth < container[a.hash%size][minDepth].depth)
+            minDepth = i;
+    }
+    container[a.hash%size][minDepth] = a;
 }
 
 TTnode TT::get(uint64_t hash){
-    int32_t i = container[0][hash%size].hash == hash ? 0 : (container[1][hash%size].hash == hash ? 1 : -1);
-    if (i == -1)
-        return TTnode();
-    return container[i][hash%size];
+    for (int32_t i = 0; i < NUM_BUCKETS; i++)
+        if (container[hash%size][i].hash == hash)
+            return container[hash%size][i];
+    return TTnode();
 }
 
 void TT::clear(){
-    for (int32_t i = 0; i < size; i++){
-        container[0][i] = TTnode();
-        container[1][i] = TTnode();
-    }
-    trueLen = 0;
+    for (int32_t i = 0; i < size; i++)
+        for (int32_t j = 0; j < NUM_BUCKETS; j++)
+            container[j][i] = TTnode();
 }
