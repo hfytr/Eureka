@@ -27,7 +27,7 @@ void uci::takeInput(){
         cur = readCommand();
         switch(cmdnum.at(cur[0])){
             case 0:{ // uci
-                cout << "id name Eureka 1.0\nid author Archim Jhunjhunwala\nuciok" << endl;
+                cout << "id name Eureka\nid author Archim Jhunjhunwala\nuciok" << endl;
                 break;
             }
             case 1:{ // debug
