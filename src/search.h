@@ -48,7 +48,7 @@ public:
     int32_t initialTime();
     uint16_t search(int32_t depth);
     uint16_t getMove(task t);
-    bool checkOver();
+    bool checkOver(), isDbgLine();
     engine(){};
 };
 #endif

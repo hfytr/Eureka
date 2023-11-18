@@ -57,6 +57,21 @@ bool engine::checkOver(){
     return true;
 }
 
+/// @brief checks whether current board is line to debug
+/// @return bool - true if is debug line else false
+bool engine::isDbgLine(){
+    string dbgLine[7] = {};
+    int32_t i;
+    for (i = 0; i < b.gameLen+1; i++)
+        if (i == b.gameLen || dbgLine[i] != algebraicFromShort(b.gameHist[i+1]))
+            break;
+    if (i == b.gameLen && fullDepth == 7){
+        cout << b.toString();
+        return true;
+    }
+    return false;
+}
+
 /// @brief performs search at given depth + quiescent search; quiescent search is infinite depth search which considers only captures/promotions to prevent the horizon effect
 /// @param depth the depth to search
 /// @param alpha current players best option - can be any distance up the tree
@@ -67,6 +82,10 @@ bool engine::checkOver(){
 /// @param ispv whether or not the current node is in the pv of the last pass of ID
 /// @return the score of the position from current players perspective, NOT the actual best move
 int32_t engine::negamax(int32_t depth, int32_t alpha, int32_t beta, pair<uint16_t,uint16_t> killerOpp, pair<uint16_t,uint16_t> &killer, vector<uint16_t> &parentpv, bool ispv){
+    // uint64_t pawn = b.bitbs[1][1] & 0x404040404040;
+    // int32_t rank = poplsb(pawn)/8;
+    // if (rank == 5-(b.gameLen+1)/2 && rank == 3 && b.player == 1)
+    //     cout << b.toString();
     selDepth = min(depth, selDepth);
     over = checkOver();
     nodes++;
@@ -106,6 +125,9 @@ int32_t engine::negamax(int32_t depth, int32_t alpha, int32_t beta, pair<uint16_
         moves.swap(i,curInd);
         m = moves[i];
 
+        // if (rank == 5-(b.gameLen+1)/2 && rank == 3 && b.player == 1 && depth == 4)
+        //     cout << showMove(m,cur,0);
+
         illegal = b.makeMove(m);
         if (illegal){
             b.unmakeMove();
@@ -115,10 +137,7 @@ int32_t engine::negamax(int32_t depth, int32_t alpha, int32_t beta, pair<uint16_
         cur = -negamax(depth-1, -beta, -alpha, killerNext, killerOpp, childpv, fullDepth-depth < pv.back().size() && ispv && m == pv.back()[fullDepth-depth]);
         b.unmakeMove();
 
-        if (algebraicFromShort(b.gameHist[1]) == "b8c6" && depth == 0)
-            int foo = 0;
-
-        if (cur >= beta){
+        if (cur > beta){
             killer.second = killer.first;
             killer.first = m;
             if (b.sqs[square2(m)] == 0)
@@ -129,9 +148,6 @@ int32_t engine::negamax(int32_t depth, int32_t alpha, int32_t beta, pair<uint16_
             tt.push(ttEntry);
             return cur;
         }
-
-        if (cur == MAX32)
-            return MAX32;
 
         if (cur > best.eval || gameOver){
             best.m = m;
@@ -148,6 +164,9 @@ int32_t engine::negamax(int32_t depth, int32_t alpha, int32_t beta, pair<uint16_
                     parentpv[j+1] = childpv[j];
             }
         }
+
+        if (cur == MAX32)
+            return MAX32;
 
         gameOver = false;
 
@@ -205,15 +224,15 @@ uint16_t engine::search(int32_t depth){
         cur = -negamax(depth-1, best.eval, MAX32, initKiller, initKiller, childpv, pv.back().size() > fullDepth-depth && m == pv.back()[fullDepth-depth]);
         b.unmakeMove();
         
-        if (cur == MAX32)
-            return m;
-
         if (cur > best.eval || gameOver){
             best = xMove(cur, m);
             nextpv[0] = m;
             for (j = 0; j < childpv.size(); j++)
                 nextpv[j+1] = childpv[j];
         }
+
+        if (cur == MAX32)
+            return m;
 
         gameOver = false;
 
