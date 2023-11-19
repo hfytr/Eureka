@@ -60,15 +60,13 @@ bool engine::checkOver(){
 /// @brief checks whether current board is line to debug
 /// @return bool - true if is debug line else false
 bool engine::isDbgLine(){
-    string dbgLine[7] = {};
+    vector<string> dbgLine = {"b4d2","f2g2"};
     int32_t i;
-    for (i = 0; i < b.gameLen+1; i++)
+    for (i = 0; i < b.gameLen+1, i < dbgLine.size(); i++)
         if (i == b.gameLen || dbgLine[i] != algebraicFromShort(b.gameHist[i+1]))
             break;
-    if (i == b.gameLen && fullDepth == 7){
-        cout << b.toString();
+    if (i == b.gameLen && fullDepth == 3)
         return true;
-    }
     return false;
 }
 
@@ -82,10 +80,6 @@ bool engine::isDbgLine(){
 /// @param ispv whether or not the current node is in the pv of the last pass of ID
 /// @return the score of the position from current players perspective, NOT the actual best move
 int32_t engine::negamax(int32_t depth, int32_t alpha, int32_t beta, pair<uint16_t,uint16_t> killerOpp, pair<uint16_t,uint16_t> &killer, vector<uint16_t> &parentpv, bool ispv){
-    // uint64_t pawn = b.bitbs[1][1] & 0x404040404040;
-    // int32_t rank = poplsb(pawn)/8;
-    // if (rank == 5-(b.gameLen+1)/2 && rank == 3 && b.player == 1)
-    //     cout << b.toString();
     selDepth = min(depth, selDepth);
     over = checkOver();
     nodes++;
@@ -97,7 +91,7 @@ int32_t engine::negamax(int32_t depth, int32_t alpha, int32_t beta, pair<uint16_
     moveList moves = b.genMoves(false, depth <= 0);
     TTnode ttEntry = TTnode(b.zobrist,0,0,b.gameLen,max(depth,0),ALL_NODE);
     int32_t j, i, curInd, cur;
-    xMove best;
+    xMove best = {MIN32,0};
     uint16_t m;
     vector<int32_t> score;
     score.resize(moves.len);
@@ -193,7 +187,7 @@ uint16_t engine::search(int32_t depth){
     TTnode ttEntry = TTnode(b.zobrist,0,0,b.gameLen,depth);
     int32_t j , i, curInd, cur;
     uint16_t m;
-    xMove best;
+    xMove best = {MIN32,0};
     vector<int32_t> score;
     score.resize(t.moves.len);
     pair<uint16_t,uint16_t> initKiller (0,0);
