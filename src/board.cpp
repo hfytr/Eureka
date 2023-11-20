@@ -521,9 +521,9 @@ uint64_t board::knightAttacks(int32_t sq, bool removeSame = true, int32_t p){
     return tr;
 }
 
-uint64_t board::bishopAttacks(int32_t sq, bool removeSame = true, int32_t p){
+uint64_t board::bishopAttacks(int32_t sq, bool removeSame = true, int32_t p, uint64_t omitBB){
     p = p == -1 ? player : p;
-    uint64_t bb = bishopMasks[sq] & (bitbs[1][0] | bitbs[0][0]);
+    uint64_t bb = bishopMasks[sq] & (bitbs[1][0] | bitbs[0][0]) & ~omitBB;
     int32_t ind = index(bb,bishopMagics[sq],bishopShift[sq]);
     uint64_t tr = blockedBishopMasks[sq][ind];
     if (quiesce)
@@ -532,9 +532,9 @@ uint64_t board::bishopAttacks(int32_t sq, bool removeSame = true, int32_t p){
     return tr;
 }
 
-uint64_t board::rookAttacks(int32_t sq, bool removeSame = true, int32_t p){
+uint64_t board::rookAttacks(int32_t sq, bool removeSame = true, int32_t p, uint64_t omitBB){
     p = p == -1 ? player : p;
-    uint64_t bb = rookMasks[sq] & (bitbs[1][0] | bitbs[0][0]);
+    uint64_t bb = rookMasks[sq] & (bitbs[1][0] | bitbs[0][0]) & ~omitBB;
     int32_t ind = index(bb,rookMagics[sq],rookShift[sq]);
     uint64_t tr = blockedRookMasks[sq][ind];
     if (quiesce)
@@ -543,9 +543,9 @@ uint64_t board::rookAttacks(int32_t sq, bool removeSame = true, int32_t p){
     return tr;
 }
 
-uint64_t board::queenAttacks(int32_t sq, bool removeSame = true, int32_t p){
+uint64_t board::queenAttacks(int32_t sq, bool removeSame = true, int32_t p, uint64_t omitBB){
     p = p == -1 ? player : p;
-    return bishopAttacks(sq,removeSame,p) | rookAttacks(sq,removeSame,p);
+    return bishopAttacks(sq,removeSame,p,omitBB) | rookAttacks(sq,removeSame,p,omitBB);
 }
 
 uint64_t board::kingAttacks(int32_t sq, bool removeSame = true, int32_t p){
@@ -728,6 +728,8 @@ moveList board::genMoves(bool legal_, bool quiesce_){
     genBishopMoves();
     genQueenMoves();
     genKingMoves();
+    legal = false;
+    quiesce = false;
     return moves;
 }
 
@@ -768,4 +770,27 @@ int32_t board::eval(){
         result[pCol(sqs[i])] += val(i);
     }
     return (result[0] - result[1]) * (player ? -1 : 1);
+}
+
+int32_t board::lva(int32_t sq, uint64_t traded, int32_t p){
+    p = p == -1 ? player : p;
+    uint64_t attacker = pawnAttacks(sq,false,false,opp(p)) & bitbs[p][1] & ~traded;
+    if (attacker)
+        return poplsb(attacker);
+    attacker = knightAttacks(sq,false,p) & bitbs[p][3] & ~traded;
+    if (attacker)
+        return poplsb(attacker);
+    attacker = bishopAttacks(sq,false,p,traded) & bitbs[p][4] & ~traded;
+    if (attacker)
+        return poplsb(attacker);
+    attacker = rookAttacks(sq,false,p,traded) & bitbs[p][2] & ~traded;
+    if (attacker)
+        return poplsb(attacker);
+    attacker = queenAttacks(sq,false,p,traded) & bitbs[p][5] & ~traded;
+    if (attacker)
+        return poplsb(attacker);
+    attacker = kingAttacks(sq,false,p) & bitbs[p][6] & ~traded;
+    if (attacker)
+        return poplsb(attacker);
+    return -1;
 }

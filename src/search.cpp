@@ -19,6 +19,34 @@ int32_t engine::initialTime(){
     return min(optimalTime, t.timeLeft[b.player]-20);
 }
 
+/// @brief returns the result of a sequence of trades on a given square, or after a given move
+/// @param sq the square on which trades will occurr
+/// @param m the move which starts the sequence of captures
+/// @return cp score DIFFERENCE after trades are finished
+int32_t engine::see(uint16_t m, int32_t sq){
+    int32_t attacker, victim = sq, player = b.player;
+    uint64_t traded = 0;
+    if (sq == -1){
+        sq = square2(m);
+        attacker = square1(m);
+    }
+    if (m == 0)
+        attacker = b.lva(sq, attacker);
+    vector<int32_t> result, victimVal;
+    while (attacker != -1){
+        victimVal.push_back(b.val(victim));
+        traded ^= 1ULL << attacker;
+        player = opp(player);
+        victim = attacker;
+        attacker = b.lva(sq,traded,player);
+    }
+    result.resize(victimVal.size());
+    result.push_back(0);
+    for (int32_t i = victimVal.size()-1; i >= 0; i--)
+        result[i] = max(0,victimVal[i] - result[i+1]);
+    return result[0];
+}
+
 /// @brief scores a move in following order 1) best move from last pass of ID (if node is pv node), 2) transposition table hit, 3) captures sorted by MVVLVA (most valuable victim, least valuable attacker), 4) killer moves, 5) butterfly score
 /// butterfly score is meant to indicate the strength of positional moves. they are updated whenever a beta cutoff is caused by a non capture/promotion and are increased by depth^2 whenever such a beta cutoff occurs. depth^2 lowers impact of low-depth nodes
 /// @param m the move to score

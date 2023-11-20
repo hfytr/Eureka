@@ -43,7 +43,7 @@ public:
     int32_t butterfly[2][64][64] = {}, count = 0;
     bool over, debug = false, forceStop;
 
-    int32_t scoreMove(uint16_t m, int32_t depth, pair<uint16_t,uint16_t> killer, bool ispv);
+    int32_t scoreMove(uint16_t m, int32_t depth, pair<uint16_t,uint16_t> killer, bool ispv), see(uint16_t m = 0, int32_t sq = -1);
     int32_t negamax(int32_t depth, int32_t alpha, int32_t beta, pair<uint16_t,uint16_t> killerOpp, pair<uint16_t,uint16_t> &killer, vector<uint16_t> &parentpv, bool ispv);
     int32_t initialTime();
     uint16_t search(int32_t depth);
