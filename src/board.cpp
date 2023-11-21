@@ -778,7 +778,7 @@ int32_t board::eval(){
 }
 
 int32_t board::lva(int32_t sq, uint64_t traded, int32_t p){
-    genPinMasks();
+    genPinMasks(p,traded);
     p = p == -1 ? player : p;
     uint64_t attacker = pawnAttacks(sq,false,false,opp(p)) & bitbs[p][1] & ~pins[0] & ~pins[1] & ~traded;
     if (attacker)

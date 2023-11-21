@@ -25,18 +25,17 @@ int32_t engine::initialTime(){
 /// @return cp score DIFFERENCE after trades are finished
 int32_t engine::see(uint16_t m, int32_t sq){
     int32_t attacker, victim = sq, player = b.player;
-    uint64_t traded = 0;
+    uint64_t traded = 1ULL << sq;
     if (sq == -1){
         sq = square2(m);
         victim = sq;
         attacker = square1(m);
     }
     if (m == 0)
-        attacker = b.lva(sq, attacker);
+        attacker = b.lva(sq, traded, player);
     vector<int32_t> result, victimVal;
     while (attacker != -1){
         victimVal.push_back(b.val(victim));
-        traded ^= 1ULL << attacker;
         player = opp(player);
         victim = attacker;
         if (pType(b.sqs[victim]) == 6){
@@ -44,6 +43,7 @@ int32_t engine::see(uint16_t m, int32_t sq){
             break;
         }
         attacker = b.lva(sq,traded,player);
+        traded ^= 1ULL << attacker;
     }
     result.resize(victimVal.size());
     result.push_back(0);
