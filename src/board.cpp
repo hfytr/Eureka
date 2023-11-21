@@ -685,37 +685,42 @@ void board::genPawnMoves(){
     }
 }
 
-void board::genPinMasks(){
+void board::genPinMasks(int32_t p, uint64_t traded){
+    pins[0] = 0ULL;
+    pins[1] = 0ULL;
+    p = p == -1 ? player : p;
     // to find rook pins, treat the king as a rook and find its attack set with enemy pieces as blockers (call this a), intersecting with enemy rook/queens finds possible pinners.
     // for each pinner find its attack set with enemy king as blocker, then intersect this with a to find the "pinning ray"
     // if the ray has no opponent pieces (besides pinner), and only 1 friendly piece (besides king) it is a pin ray and it is added to pins
     // similar for bishops
-    int32_t kSq = poplsb(bitbs[player][6], false), pinner;
-    // kMask[i][j]: j = 0 for rook, 1 for bishop. i = 0 for no blocker, 1 for enemy pieces as blocker
-    uint64_t kMask[2][2] = {
-        {blockedRookMasks[kSq][index(0,rookMagics[kSq],rookShift[kSq])], blockedBishopMasks[kSq][index(0,bishopMagics[kSq],bishopShift[kSq])]},
-        {blockedRookMasks[kSq][index(bitbs[opp(player)][0] & rookMasks[kSq], rookMagics[kSq], rookShift[kSq])], blockedBishopMasks[kSq][index(bitbs[opp(player)][0] & bishopMasks[kSq], bishopMagics[kSq], bishopShift[kSq])]}
-    };
-    uint64_t pinners[2] = {kMask[1][0] & (bitbs[opp(player)][2] | bitbs[opp(player)][5]), kMask[1][1] & (bitbs[opp(player)][4] | bitbs[opp(player)][5])}, ray;
+    int32_t kSq = poplsb(bitbs[p][6], false), pinner;
+    // kMask[i]: i = 0 for rook, 1 for cishop. is attack seet with enemy pieces as blockers
+    uint64_t kMask[2];
+    uint64_t bb = bitbs[opp(p)][0] & rookMasks[kSq] & ~traded;
+    int32_t index = index(bb, rookMagics[kSq], rookShift[kSq]);
+    kMask[0] = blockedRookMasks[kSq][index];
+    bb = bitbs[opp(p)][0] & bishopMasks[kSq] & ~traded;
+    index = index(bb, bishopMagics[kSq], bishopShift[kSq]);
+    kMask[1] = blockedBishopMasks[kSq][index];
+    
+    uint64_t pinners[2] = {kMask[0] & (bitbs[opp(p)][2] & ~traded | bitbs[opp(p)][5] & ~traded), kMask[1] & (bitbs[opp(p)][4] & ~traded | bitbs[opp(p)][5] & ~traded)}, ray;
 
     while (pinners[0]){
         pinner = poplsb(pinners[0]);
-        ray = blockedRookMasks[pinner][index(0,rookMagics[pinner],rookShift[pinner])] & kMask[1][0];
-        if (singular(ray & bitbs[player][0]) && (bitbs[opp(player)][0] & ray) == 0)
+        ray = blockedRookMasks[pinner][index(0,rookMagics[pinner],rookShift[pinner])] & kMask[0];
+        if (singular(ray & bitbs[p][0] & ~traded) && (bitbs[opp(p)][0] & ray & ~traded) == 0)
             pins[0] |= ray | 1ULL << pinner;
     }
 
     while (pinners[1]){
         pinner = poplsb(pinners[1]);
-        ray = blockedBishopMasks[pinner][index(0,bishopMagics[pinner],bishopShift[pinner])] & kMask[1][1];
-        if (singular(ray & bitbs[player][0]) && (bitbs[opp(player)][0] & ray) == 0)
+        ray = blockedBishopMasks[pinner][index(0,bishopMagics[pinner],bishopShift[pinner])] & kMask[1];
+        if (singular(ray & bitbs[p][0] & ~traded) && (bitbs[opp(p)][0] & ray & ~traded) == 0)
             pins[1] |= ray | 1ULL << pinner;
     }
 }
 
 moveList board::genMoves(bool legal_, bool quiesce_){
-    if (gameLen == 3 && gameHist[1] == 1032 && gameHist[2] == 919 && gameHist[3] == 1097)
-        cout << phase << endl << toString();
     legal = legal_;
     quiesce = quiesce_;
     moves = moveList();
@@ -773,23 +778,24 @@ int32_t board::eval(){
 }
 
 int32_t board::lva(int32_t sq, uint64_t traded, int32_t p){
+    genPinMasks();
     p = p == -1 ? player : p;
-    uint64_t attacker = pawnAttacks(sq,false,false,opp(p)) & bitbs[p][1] & ~traded;
+    uint64_t attacker = pawnAttacks(sq,false,false,opp(p)) & bitbs[p][1] & ~pins[0] & ~pins[1] & ~traded;
     if (attacker)
         return poplsb(attacker);
-    attacker = knightAttacks(sq,false,p) & bitbs[p][3] & ~traded;
+    attacker = knightAttacks(sq,false,p) & bitbs[p][3] & ~pins[0] & ~pins[1] & ~traded;
     if (attacker)
         return poplsb(attacker);
-    attacker = bishopAttacks(sq,false,p,traded) & bitbs[p][4] & ~traded;
+    attacker = bishopAttacks(sq,false,p,traded) & bitbs[p][4] & ~pins[0] & ~pins[1] & ~traded;
     if (attacker)
         return poplsb(attacker);
-    attacker = rookAttacks(sq,false,p,traded) & bitbs[p][2] & ~traded;
+    attacker = rookAttacks(sq,false,p,traded) & bitbs[p][2] & ~pins[0] & ~pins[1] & ~traded;
     if (attacker)
         return poplsb(attacker);
-    attacker = queenAttacks(sq,false,p,traded) & bitbs[p][5] & ~traded;
+    attacker = queenAttacks(sq,false,p,traded) & bitbs[p][5] & ~pins[0] & ~pins[1] & ~traded;
     if (attacker)
         return poplsb(attacker);
-    attacker = kingAttacks(sq,false,p) & bitbs[p][6] & ~traded;
+    attacker = kingAttacks(sq,false,p) & bitbs[p][6];
     if (attacker)
         return poplsb(attacker);
     return -1;

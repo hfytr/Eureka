@@ -28,6 +28,7 @@ int32_t engine::see(uint16_t m, int32_t sq){
     uint64_t traded = 0;
     if (sq == -1){
         sq = square2(m);
+        victim = sq;
         attacker = square1(m);
     }
     if (m == 0)
@@ -38,6 +39,10 @@ int32_t engine::see(uint16_t m, int32_t sq){
         traded ^= 1ULL << attacker;
         player = opp(player);
         victim = attacker;
+        if (pType(b.sqs[victim]) == 6){
+            victimVal.pop_back();
+            break;
+        }
         attacker = b.lva(sq,traded,player);
     }
     result.resize(victimVal.size());
