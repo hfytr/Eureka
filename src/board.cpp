@@ -214,7 +214,7 @@ board::board(string fen){
     while (fen[i] != ' '){
         int32_t ascii = int32_t(fen[i]);
         if (ascii == int32_t('/') || col==8){
-            row--; col=-1;
+            row--; col = -1;
         } 
         else if (ascii < int32_t('9'))
             col += ascii - int32_t('0') - 1;
