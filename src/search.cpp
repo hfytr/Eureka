@@ -10,6 +10,20 @@
 using namespace std;
 #define print(b) (cout << b.toString() << b.printBB())
 
+void engine::printInfo(){
+    auto passed = steady_clock::now()-start;
+    if (!debug && duration_cast<chrono::milliseconds>(passed).count() < min(500,t.length/2)) // reduce verbosity
+        return;
+    cout << "info depth " << fullDepth << " seldepth " << fullDepth-selDepth << " nodes " << nodes << " time " << duration_cast<milliseconds>(passed).count() << " nps " << nodes/(duration_cast<seconds>(passed).count()+1) << " score cp " << pveval.back() << endl;
+    cout << "info pv";
+    for (int32_t i = 0; i < pv.back().size(); i++){
+        if (pv.back()[i] == 0)
+            break;
+        cout << ' ' << algebraicFromShort(pv.back()[i]);
+    }
+    cout << endl;
+}
+
 int32_t engine::initialTime(){
     int32_t optimalTime;
     if (t.movestogo > 0)
@@ -118,9 +132,6 @@ int32_t engine::negamax(int32_t depth, int32_t alpha, int32_t beta, pair<uint16_
         swap(score[i],score[curInd]);
         moves.swap(i,curInd);
         m = moves[i];
-
-        // if (rank == 5-(b.gameLen+1)/2 && rank == 3 && b.player == 1 && depth == 4)
-        //     cout << showMove(m,cur,0);
 
         illegal = b.makeMove(m);
         if (illegal){
@@ -268,16 +279,8 @@ uint16_t engine::getMove(task t_){
     over = false;
     while (!over){
         best = search(fullDepth);
-        auto passed = steady_clock::now()-start;
-        cout << "info depth " << fullDepth << " seldepth " << fullDepth-selDepth << " nodes " << nodes << " time " << duration_cast<milliseconds>(passed).count() << " nps " << nodes/(duration_cast<seconds>(passed).count()+1) << " score cp " << pveval.back() << endl;
-        cout << "info pv";
-        for (int32_t i = 0; i < pv.back().size(); i++){
-            if (pv.back()[i] == 0)
-                break;
-            cout << ' ' << algebraicFromShort(pv.back()[i]);
-        }
-        cout << endl;
         fullDepth++;
+        printInfo();
         if (pveval.back() == MAX32 || pveval.back() == MIN32)
             return best;
         over = checkOver();

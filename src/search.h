@@ -49,6 +49,7 @@ public:
     uint16_t search(int32_t depth);
     uint16_t getMove(task t);
     bool checkOver(), isDbgLine();
+    void printInfo();
     engine(){};
 };
 #endif
