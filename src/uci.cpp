@@ -20,7 +20,7 @@ vector<string> uci::readCommand(){
 }
 
 void uci::takeInput(){
-    const map<string,int32_t> cmdnum {{"uci",0},{"debug",1},{"isready",2},{"setoption",3},{"ucinewgame",4},{"position",5},{"go",6},{"stop",7},{"quit",8}};
+    const map<string,int32_t> cmdnum {{"uci",0},{"debug",1},{"isready",2},{"setoption",3},{"ucinewgame",4},{"position",5},{"go",6},{"stop",7},{"quit",8},{"printfen",9},{"printboard",10}};
     const map<string,int32_t> gotoken {{"searchmoves",0},{"ponder",-2},{"wtime",2},{"btime",3},{"winc",4},{"binc",5},{"movestogo",6},{"depth",7},{"nodes",8},{"movetime",9},{"infinite",-1}};
     vector<string> cur;
     while (true){
@@ -137,10 +137,25 @@ void uci::takeInput(){
                 condWaitForTask.notify_one();
                 return;
             }
+            // the following cases are not "offical" UCI and are used purely for debugging
+            case 9:{ // printfen
+                cout << e.b.fen() << endl;
+                break;
+            }
+            case 10:{ // printboard
+                cout << e.b.toString();
+                if (e.debug)
+                    cout << e.b.printBB();
+            }
         }
     }
 }
+/*
+position fen rn1q1rk1/pb1pbppp/1p2pn2/6B1/2Pp4/2NBPN2/PP3PPP/R2Q1RK1 w - - 0 1 moves e3d4 d7d5 g5e3 b8c6 a1c1 a8c8 c4d5 e6d5 h2h3 h7h6 f1e1 a7a6 f3e5 c6e5 d4e5 f6d7 d3f5 e7g5 d1g4 g5e3 e1e3 c8c4 g4g3 d5d4 e3d3 d7c5 d3d1 f8e8 a2a3 c5b3 c1b1 b7c6 c3e4 c6e4 f5e4 b3c5 e4c6 e8e6 c6f3 c4c2 b2b4 e6g6 g3f4 c5e6 f4f5 d8c7 f3d5 c2e2 d1e1 c7c2 f5c2 e2c2 d5e4 c2d2 e4g6 f7g6 b1d1 d2b2 h3h4 b2b3 d1a1 d4d3
+printfen
+printboard
 
+*/ 
 void uci::processInput(){
     task t;
     while (true){

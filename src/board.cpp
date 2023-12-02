@@ -21,7 +21,6 @@ void moveList::swap(int32_t i, int32_t j){
     container[j] = temp;
 }
 
-// pops least significant 1. optionally toggles the bit
 // uses DeBruijn sequences (https://www.chessprogramming.org/BitScan)
 int32_t poplsb(uint64_t &n, bool remove){
     if (n == 0)
@@ -199,7 +198,7 @@ uint16_t shortFromAlgebraic(string a, board* b){
 
 string algebraicFromShort(uint16_t m){
     int32_t sq1 = square1(m), sq2 = square2(m), prom = promotion(m), spec = special(m);
-    string s = {char(col(sq1)+int32_t('a')), char(row(sq1)+int32_t('1')), char(col(sq2)+int32_t('a')), char(row(sq2)+int32_t('1'))};
+    string s = algebraicSquare(sq1) + algebraicSquare(sq2);
     if (spec == PROMOTE)
         s += int2Letter[prom+7];
     return s;
@@ -291,7 +290,7 @@ board::board(string fen){
     uint64_t pieces = bitbs[0][0] | bitbs[0][1];
     while (pieces){
         int32_t sq = poplsb(pieces);
-        piece = pType(sqs[sq])-1 + 6*sqs[sq]/7;
+        piece = pType(sqs[sq])-1 + 6*pCol(sqs[sq]);
         zobrist ^= zrn[piece*64+sq];
     }
     if (player)
@@ -307,11 +306,48 @@ board::board(string fen){
     uint16_t m = bitbs[player][6];
     if (abs(square1(m)-square2(m)) == 16 && pType(sqs[square2(m)]) == 1)
         zobrist ^= zrn[ZEP+square2(m)%7];
+    
     repetition.push_back(vector<uint64_t> (0));
     repetition.back().push_back(zobrist);
 }
 
-bool board::canCastle(int32_t i, int32_t j){
+string board::fen(){
+    string fen;
+    for (int32_t i = 7; i >= 0; i--){
+        for (int32_t j = 0; j < 8; j++){
+            if (sqs[i*8+j] == 0){
+                if ((i == 7 & j == 0) || fen.back() == '/' || int32_t(fen.back()) > int32_t('9'))
+                    fen += '1';
+                else
+                    fen.back() = char(int32_t(fen.back()) + 1);
+            } else
+                fen += int2Letter[sqs[i*8+j]];
+        }
+        if (i != 0)
+            fen += '/';
+    }
+
+    fen += player ? " b " : " w ";
+
+    string castleChar = "KQkq";
+    for (int32_t i = 0; i < 4; i++)
+        if (canCastle(i/2,i%2))
+            fen += castleChar[i];
+    if (fen.back() == ' ')
+        fen += '-';
+    
+    uint16_t m = gameHist[gameLen];
+    if (pType(sqs[square2(m)]) == 1 && abs(square2(m) - square1(m) == 16))
+        fen += " " + algebraicSquare((square1(m)+square2(m))/2) + " ";
+    else
+        fen += " - ";
+    
+    fen += to_string(gameLen) + " " + to_string(gameLen/2);
+    
+    return fen;
+}
+
+inline bool board::canCastle(int32_t i, int32_t j){
     return castle[i][j] == MAX32;
 }
 
@@ -399,23 +435,25 @@ bool board::makeMove(uint16_t m){
             zobrist ^= zrn[ZCASTLE + player*2 + 1];
         castle[player][1] = min(castle[player][1], gameLen);
     }
+    
     if (toPiece == 0 && pType(fromPiece) != 1)
         fiftyCount++;
     else{
         fiftyCount = 0;
         repetition.push_back(vector<uint64_t> (0));
     }
+    
     captured[gameLen] = toPiece;
     gameHist[gameLen] = m;
     sqs[sq2] = sqs[sq1]; sqs[sq1] = 0;
-    // captures
+    
     if (toPiece != 0){
         toggle(bitbs[pCol(toPiece)][pType(toPiece)],sq2);
         toggle(bitbs[pCol(toPiece)][0],sq2);
         zobrist ^= zrn[(pType(toPiece)-1 + pCol(toPiece)*6)*64+sq2];
         phase -= phaseInc[pType(toPiece)-1];
     }
-    // special cases
+    
     switch(spec){
         case PROMOTE : {
             toggle(bitbs[player][prom],sq2);
@@ -438,7 +476,8 @@ bool board::makeMove(uint16_t m){
             break;
         }
     }
-    bool tr = attacked() || occursTwice(zobrist) || fiftyCount == 50;
+    
+    bool tr = attacked() || occursTwice(zobrist) || fiftyCount == 100;
     player = opp(player);
     zobrist ^= zrn[ZPLAYER];
     repetition.back().push_back(zobrist);
@@ -458,7 +497,7 @@ void board::unmakeMove(){
     if (capt){
         toggle(bitbs[opp(player)][pType(capt)], sq2);
         toggle(bitbs[opp(player)][0], sq2);
-        zobrist ^= zrn[(pType(capt)-1 + capt/7*6)*64+sq2];
+        zobrist ^= zrn[(pType(capt)-1 + pCol(capt)*6)*64+sq2];
         phase += phaseInc[pType(capt)-1];
     }
     // in the case of a promotion, the piece which should be removed from sq2 will be a pawn, and not the fromPiece

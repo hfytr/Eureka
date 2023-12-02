@@ -112,17 +112,23 @@ public:
     moveList genMoves(bool legal_, bool quiesce_);
     int32_t eval(), val(int32_t sq);
     board(string fen = START_FEN);
-    string toString(), printBB();
+    string toString(), printBB(), fen();
     bool makeMove(uint16_t m), attacked(int32_t sq = -1);
     void unmakeMove();
 
 private:
     uint64_t pawnAttacks(int32_t sq, bool moveGen, bool removeSame, int32_t p = -1), rookAttacks(int32_t sq, bool removeSame, int32_t p = -1), knightAttacks(int32_t sq, bool removeSame, int32_t p = -1), bishopAttacks(int32_t sq, bool removeSame, int32_t p = -1), queenAttacks(int32_t sq, bool removeSame, int32_t p = -1), kingAttacks(int32_t sq, bool removeSame, int32_t p = -1);
-    bool canCastle(int32_t i, int32_t j), occursTwice(uint64_t a);
+    inline bool canCastle(int32_t i, int32_t j);
+    bool occursTwice(uint64_t a);
     void pushMove(uint16_t m), genPawnMoves(), genRookMoves(), genKnightMoves(), genBishopMoves(), genQueenMoves(), genKingMoves(), genPinMasks();
 };
 
 uint16_t shortFromAlgebraic(string a, board* b);
+
+inline string algebraicSquare(int32_t sq){
+    string s = {char(col(sq)+int32_t('a')), char(row(sq)+int32_t('1'))};
+    return s;
+}
 
 string algebraicFromShort(uint16_t m);
 
