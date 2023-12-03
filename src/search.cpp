@@ -94,8 +94,6 @@ bool engine::isDbgLine(){
 /// @param ispv whether or not the current node is in the pv of the last pass of ID
 /// @return the score of the position from current players perspective, NOT the actual best move
 int32_t engine::negamax(int32_t depth, int32_t alpha, int32_t beta, pair<uint16_t,uint16_t> killerOpp, pair<uint16_t,uint16_t> &killer, vector<uint16_t> &parentpv, bool ispv){
-    //if (b.gameHist[24] == 4023 && b.gameHist[25] == 1032 && b.gameHist[26] == 4023)
-    //    cout << b.toString() << b.printBB() << endl;
     selDepth = min(depth, selDepth);
     over = checkOver();
     nodes++;
@@ -121,6 +119,15 @@ int32_t engine::negamax(int32_t depth, int32_t alpha, int32_t beta, pair<uint16_
         best.eval = b.eval();
         if (alpha < best.eval)
             alpha = best.eval;
+        if (best.eval > beta){
+            killer.second = killer.first;
+            killer.first = m;
+            ttEntry.eval = cur;
+            ttEntry.m = m;
+            ttEntry.type = CUT_NODE;
+            tt.push(ttEntry);
+            return best.eval;
+        }
     }
 
     for (i = 0; i < moves.len; i++)
@@ -143,16 +150,14 @@ int32_t engine::negamax(int32_t depth, int32_t alpha, int32_t beta, pair<uint16_
         childpv.clear();
         cur = -negamax(depth-1, -beta, -alpha, killerNext, killerOpp, childpv, fullDepth-depth < pv.back().size() && ispv && m == pv.back()[fullDepth-depth]);
         b.unmakeMove();
-        //if (fullDepth == 4 && depth == 2 && b.gameHist[24] == 4023 && b.gameHist[25] == 1032)
-        //    cout << showMove(m);
 
         if (cur > beta){
             killer.second = killer.first;
             killer.first = m;
-            if (b.sqs[square2(m)] == 0)
-                butterfly[b.player][square1(m)][square2(m)] += depth^2;
-            ttEntry.eval = best.eval; 
-            ttEntry.m = best.m;
+            if (b.sqs[square2(m)] == 0 && depth > 0)
+                butterfly[b.player][square1(m)][square2(m)] += depth*depth;
+            ttEntry.eval = cur;
+            ttEntry.m = m;
             ttEntry.type = CUT_NODE;
             tt.push(ttEntry);
             return cur;
@@ -233,6 +238,8 @@ uint16_t engine::search(int32_t depth){
         childpv.clear();
         cur = -negamax(depth-1, best.eval, MAX32, initKiller, initKiller, childpv, pv.back().size() > fullDepth-depth && m == pv.back()[fullDepth-depth]);
         b.unmakeMove();
+
+        cout << showMove(m,nodes,1);
         
         if (cur > best.eval || gameOver){
             best = xMove(cur, m);
