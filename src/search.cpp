@@ -94,6 +94,8 @@ bool engine::isDbgLine(){
 /// @param ispv whether or not the current node is in the pv of the last pass of ID
 /// @return the score of the position from current players perspective, NOT the actual best move
 int32_t engine::negamax(int32_t depth, int32_t alpha, int32_t beta, pair<uint16_t,uint16_t> killerOpp, pair<uint16_t,uint16_t> &killer, vector<uint16_t> &parentpv, bool ispv){
+    //if (b.gameHist[24] == 4023 && b.gameHist[25] == 1032 && b.gameHist[26] == 4023)
+    //    cout << b.toString() << b.printBB() << endl;
     selDepth = min(depth, selDepth);
     over = checkOver();
     nodes++;
@@ -141,6 +143,8 @@ int32_t engine::negamax(int32_t depth, int32_t alpha, int32_t beta, pair<uint16_
         childpv.clear();
         cur = -negamax(depth-1, -beta, -alpha, killerNext, killerOpp, childpv, fullDepth-depth < pv.back().size() && ispv && m == pv.back()[fullDepth-depth]);
         b.unmakeMove();
+        //if (fullDepth == 4 && depth == 2 && b.gameHist[24] == 4023 && b.gameHist[25] == 1032)
+        //    cout << showMove(m);
 
         if (cur > beta){
             killer.second = killer.first;
@@ -220,6 +224,7 @@ uint16_t engine::search(int32_t depth){
         t.moves.swap(i,curInd);
 
         illegal = b.makeMove(m);
+
         if (illegal){
             b.unmakeMove();
             continue;
@@ -279,8 +284,8 @@ uint16_t engine::getMove(task t_){
     over = false;
     while (!over){
         best = search(fullDepth);
-        fullDepth++;
         printInfo();
+        fullDepth++;
         if (pveval.back() == MAX32 || pveval.back() == MIN32)
             return best;
         over = checkOver();

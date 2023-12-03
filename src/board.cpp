@@ -2,6 +2,7 @@
 #include <string>
 #include <climits>
 #include <iostream>
+#include <bitset>
 #include "board.h"
 #include "constants.h"
 using namespace std;
@@ -204,7 +205,12 @@ string algebraicFromShort(uint16_t m){
     return s;
 }
 
-// FEN notation: https://en.wikipedia.org/wiki/Forsyth–Edwards_Notation
+string showMove(uint16_t m, int32_t result, bool useResult){
+    const string specString[4] = {"None", "Promotion", "EP", "Castle"};
+    return "short: " + to_string(m) + " algebraic: " + algebraicFromShort(m) + " sq1: " + to_string(square1(m)) + " sq2: " + to_string(square2(m)) + " promote: " + to_string(promotion(m)) + " special: " + specString[special(m)] + (useResult ? ("\nresult: " + to_string(result) + "\n") : "\n");
+}
+
+// FEN notation: https://en.wikipedia.org/wiki/Forsyth–Edw  ards_Notation
 board::board(string fen){
     // maps letter to corresponding piece number
     // 1 (b) -> 4, 10(k) -> 6
@@ -246,7 +252,7 @@ board::board(string fen){
                 i++;
         }
     }
-    i++;
+    i += 2;
     // to handle ep, sets the first move as being the fen specified double pawn push
     if (fen[i] != '-'){
         int32_t sq = (int32_t(fen[i+1])-int32_t('1'))*8 + int32_t(fen[i])-int32_t('a');
@@ -254,7 +260,7 @@ board::board(string fen){
             gameHist[0] = getShort(sq-8,sq+8,0,0);
         else
             gameHist[0] = getShort(sq+8,sq-8,0,0);
-    } i += 2;
+    } i += 3;
     fiftyCount = (int32_t(fen[i])-int32_t('0'))*10 + fen[i+1] != ' ' ? int32_t(fen[i+1])-int32_t('0') : 0;
     bitbs[0][0] = 0; bitbs[1][0] = 0;
     for (int32_t i = 0; i < 2; i++)
@@ -286,26 +292,39 @@ board::board(string fen){
             egpesto[i][j] = egval[i] + egpestoPre[i][j^56];
         }
     }
-    int32_t piece,sq;
-    uint64_t pieces = bitbs[0][0] | bitbs[0][1];
+
+    zobrist = 0;
+    int32_t sq;
+    uint64_t pieces = bitbs[0][0] | bitbs[1][0];
     while (pieces){
         int32_t sq = poplsb(pieces);
-        piece = pType(sqs[sq])-1 + 6*pCol(sqs[sq]);
-        zobrist ^= zrn[piece*64+sq];
+        zobrist ^= zrn[zobristPieceIndex(sqs[sq],sq)];
+        bits.flip(zobristPieceIndex(sqs[sq],sq));
     }
-    if (player)
+    if (player){
         zobrist ^= zrn[ZPLAYER];
-    if (canCastle(0,0))
+        bits.flip(ZPLAYER);
+    }
+    if (canCastle(0,0)){
         zobrist ^= zrn[ZCASTLE];
-    if (canCastle(0,1))
+        bits.flip(ZCASTLE);
+    }
+    if (canCastle(0,1)){
         zobrist ^= zrn[ZCASTLE+1];
-    if (canCastle(1,0))
+        bits.flip(ZCASTLE+1);
+    }
+    if (canCastle(1,0)){
         zobrist ^= zrn[ZCASTLE+2];
-    if (canCastle(1,1))
+        bits.flip(ZCASTLE+2);
+    }
+    if (canCastle(1,1)){
         zobrist ^= zrn[ZCASTLE+3];
-    uint16_t m = bitbs[player][6];
-    if (abs(square1(m)-square2(m)) == 16 && pType(sqs[square2(m)]) == 1)
-        zobrist ^= zrn[ZEP+square2(m)%7];
+        bits.flip(ZCASTLE+3);
+    }
+    if (abs(square1(gameHist[0])-square2(gameHist[0])) == 16 && pType(sqs[square2(gameHist[0])]) == 1){
+        zobrist ^= zrn[ZEP+col(square2(gameHist[0]))];
+        bits.flip(ZEP+col(square2(gameHist[0])));
+    }
     
     repetition.push_back(vector<uint64_t> (0));
     repetition.back().push_back(zobrist);
@@ -337,7 +356,7 @@ string board::fen(){
         fen += '-';
     
     uint16_t m = gameHist[gameLen];
-    if (pType(sqs[square2(m)]) == 1 && abs(square2(m) - square1(m) == 16))
+    if (pType(sqs[square2(m)]) == 1 && abs(square2(m) - square1(m)) == 16)
         fen += " " + algebraicSquare((square1(m)+square2(m))/2) + " ";
     else
         fen += " - ";
@@ -393,52 +412,73 @@ bool board::makeMove(uint16_t m){
     moveBit(bitbs[pCol(fromPiece)][0],sq1,sq2);
     // in the case of a promotion, the piece on sq2 will be the promotion piece, and no the piece on sq1
     if (spec != PROMOTE){
-        zobrist ^= zrn[(pType(fromPiece)-1 + pCol(fromPiece)*6)*64+sq2];
+        zobrist ^= zrn[zobristPieceIndex(fromPiece,sq2)];
+        bits.flip(zobristPieceIndex(fromPiece,sq2));
         toggle(bitbs[pCol(fromPiece)][pType(fromPiece)],sq2);
     }
-    zobrist ^= zrn[(pType(fromPiece)-1 + pCol(fromPiece)*6)*64+sq1];
-    if (abs(sq1-sq2) == 16 && pType(fromPiece) == 1)
-        zobrist ^= zrn[ZEP+square2(m)%7];
+    zobrist ^= zrn[zobristPieceIndex(fromPiece,sq1)];
+    bits.flip(zobristPieceIndex(fromPiece,sq1));
+    if (abs(sq1-sq2) == 16 && pType(fromPiece) == 1){
+        zobrist ^= zrn[ZEP+square2(m)%8];
+        bits.flip(ZEP+square2(m)%8);
+    }
+    int32_t prevsq1 = square1(gameHist[gameLen]), prevsq2 = square2(gameHist[gameLen]);
+    if (abs(prevsq1-prevsq2) == 16 && pType(sqs[prevsq2]) == 1){
+        zobrist ^= zrn[ZEP+col(prevsq2)];
+        bits.flip(ZEP+col(prevsq2));
+    }
     gameLen++;
     // change castling rights if enemy rook is captured
     if (pType(toPiece) == 2 && row(sq2) == opp(player)*7){
         if (col(sq2) == 0){
-            if (canCastle(opp(player),0))
+            if (canCastle(opp(player),0)){
                 zobrist ^= zrn[ZCASTLE + opp(player)*2];
+                bits.flip(ZCASTLE + opp(player)*2);
+            }
             castle[opp(player)][0] = min(castle[opp(player)][0], gameLen);
         }
         if (col(sq2) == 7){
-            if (canCastle(opp(player),1))
+            if (canCastle(opp(player),1)){
                 zobrist ^= zrn[ZCASTLE + opp(player)*2 + 1];
+                bits.flip(ZCASTLE + opp(player)*2 + 1);
+            }
             castle[opp(player)][1] = min(castle[opp(player)][1], gameLen);
         }
     }
     // change castling rights if moving rook
     if (pType(fromPiece) == 2 && row(sq1) == player*7){
         if (col(sq1) == 0){
-            if (canCastle(player,0))
+            if (canCastle(player,0)){
                 zobrist ^= zrn[ZCASTLE + player*2];
+                bits.flip(ZCASTLE + player*2);
+            }
             castle[player][0] = min(castle[player][0], gameLen);
         }
         else if (col(sq1) == 7){
-            if (canCastle(player,1))
+            if (canCastle(player,1)){
                 zobrist ^= zrn[ZCASTLE + player*2 + 1];
+                bits.flip(ZCASTLE + player*2 + 1);
+            }
             castle[player][1] = min(castle[player][1], gameLen);
         }
     }
     // change castling rights if moving king
     if (pType(fromPiece) == 6){
-        if (canCastle(player,0))
-            zobrist ^= zrn[ZCASTLE + player*2];    
+        if (canCastle(player,0)){
+            zobrist ^= zrn[ZCASTLE + player*2];
+            bits.flip(ZCASTLE + player*2);
+        }
         castle[player][0] = min(castle[player][0], gameLen);
-        if (canCastle(player,1))
+        if (canCastle(player,1)){
             zobrist ^= zrn[ZCASTLE + player*2 + 1];
+            bits.flip(ZCASTLE + player*2 + 1);
+        }
         castle[player][1] = min(castle[player][1], gameLen);
     }
     
     if (toPiece == 0 && pType(fromPiece) != 1)
         fiftyCount++;
-    else{
+    else {
         fiftyCount = 0;
         repetition.push_back(vector<uint64_t> (0));
     }
@@ -450,7 +490,8 @@ bool board::makeMove(uint16_t m){
     if (toPiece != 0){
         toggle(bitbs[pCol(toPiece)][pType(toPiece)],sq2);
         toggle(bitbs[pCol(toPiece)][0],sq2);
-        zobrist ^= zrn[(pType(toPiece)-1 + pCol(toPiece)*6)*64+sq2];
+        zobrist ^= zrn[zobristPieceIndex(toPiece,sq2)];
+        bits.flip(zobristPieceIndex(toPiece,sq2));
         phase -= phaseInc[pType(toPiece)-1];
     }
     
@@ -459,6 +500,7 @@ bool board::makeMove(uint16_t m){
             toggle(bitbs[player][prom],sq2);
             sqs[sq2] = prom + player*7;
             zobrist ^= zrn[(prom-1+player*6)*64+sq2];
+            bits.flip((prom-1+player*6)*64+sq2);
             phase += phaseInc[prom-1] - 1;
             break;
         }
@@ -480,6 +522,7 @@ bool board::makeMove(uint16_t m){
     bool tr = attacked() || occursTwice(zobrist) || fiftyCount == 100;
     player = opp(player);
     zobrist ^= zrn[ZPLAYER];
+    bits.flip(ZPLAYER);
     repetition.back().push_back(zobrist);
     return tr;
 }
@@ -490,26 +533,38 @@ void board::unmakeMove(){
     int32_t sq1 = square1(m), sq2 = square2(m), prom = promotion(m), spec = special(m), capt = captured[gameLen];
     player = opp(player);
     zobrist ^= zrn[ZPLAYER];
+    bits.flip(ZPLAYER);
     int32_t fromPiece = spec == PROMOTE ? (1+7*player) : sqs[sq2];
     toggle(bitbs[player][pType(fromPiece)], sq1);
     moveBit(bitbs[player][0], sq2, sq1);
-    // captures
+
     if (capt){
         toggle(bitbs[opp(player)][pType(capt)], sq2);
         toggle(bitbs[opp(player)][0], sq2);
-        zobrist ^= zrn[(pType(capt)-1 + pCol(capt)*6)*64+sq2];
+        zobrist ^= zrn[zobristPieceIndex(capt,sq2)];
+        bits.flip(zobristPieceIndex(capt,sq2));
         phase += phaseInc[pType(capt)-1];
     }
-    // in the case of a promotion, the piece which should be removed from sq2 will be a pawn, and not the fromPiece
+
     if (spec != PROMOTE){
-        zobrist ^= zrn[(pType(fromPiece)-1 + pCol(fromPiece)*6)*64+sq2];
+        zobrist ^= zrn[zobristPieceIndex(fromPiece,sq2)];
+        bits.flip(zobristPieceIndex(fromPiece,sq2));
         toggle(bitbs[player][pType(fromPiece)], sq2);
     }
-    zobrist ^= zrn[(pType(fromPiece)-1 + pCol(fromPiece)*6)*64+sq1];
-    if (abs(sq1-sq2) == 16 && pType(fromPiece) == 1)
-        zobrist ^= zrn[ZEP+square2(m)%7];
+    zobrist ^= zrn[zobristPieceIndex(fromPiece,sq1)];
+    bits.flip(zobristPieceIndex(fromPiece,sq1));
+    if (abs(sq1-sq2) == 16 && pType(fromPiece) == 1){
+        zobrist ^= zrn[ZEP+square2(m)%8];
+        bits.flip(ZEP+square2(m)%8);
+    }
     sqs[sq1] = fromPiece;
     sqs[sq2] = capt;
+    
+    int32_t prevsq1 = square1(gameHist[gameLen-1]), prevsq2 = square2(gameHist[gameLen-1]);
+    if (abs(prevsq1-prevsq2) == 16 && pType(sqs[prevsq2]) == 1){
+        zobrist ^= zrn[ZEP+col(prevsq2)];
+        bits.flip(ZEP+col(prevsq2));
+    }
     // special cases
     switch (spec){
         case PROMOTE: {
@@ -542,6 +597,7 @@ void board::unmakeMove(){
             if (castle[i][j] == gameLen){
                 castle[i][j] = MAX32;
                 zobrist ^= zrn[ZCASTLE + i*2 + j];
+                bits.flip(ZCASTLE+i*2+j);
             }
         }
     }
