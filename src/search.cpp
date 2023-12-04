@@ -149,7 +149,6 @@ int32_t engine::negamax(int32_t depth, int32_t alpha, int32_t beta, pair<uint16_
     pair<uint16_t,uint16_t> killerNext;
     vector<uint16_t> childpv;
     bool illegal, gameOver = depth > 0;
-    uint16_t m;
 
     // it is (mostly) possible to not make any captures and instead "stand pat" so this is alphas initial value
     // only applicable to quiescent search (when depth <= 0)
