@@ -1,6 +1,7 @@
 #include <vector>
 #include <string>
 #include <climits>
+#include <bitset>
 #include "constants.h"
 using namespace std;
 
@@ -27,6 +28,8 @@ using namespace std;
 #define moveBit(a,i,j) (a ^= 1ULL << (i) | 1ULL << (j))
 // sets bits in a which are also in b to 0
 #define remove(a,b) (a &= ~(b))
+// gets the zobrist index given a piece, and sq
+#define zobristPieceIndex(piece,sq) ((pType(piece)-1 + pCol(piece)*6)*64+(sq))
 
 class moveList {
 public:
@@ -57,10 +60,7 @@ inline uint16_t getShort(uint32_t square1, uint32_t square2, uint32_t promote=0,
 }
 
 // prints move
-inline string showMove(uint16_t m = 0, int32_t result = 0, bool useResult = false){
-    const string specString[4] = {"None", "Promotion", "EP", "Castle"};
-    return "short: " + to_string(m) + " sq1: " + to_string(square1(m)) + " sq2: " + to_string(square2(m)) + " promote: " + to_string(promotion(m)) + " special: " + specString[special(m)] + (useResult ? ("\nresult: " + to_string(result) + "\n") : "\n");
-}
+string showMove(uint16_t m = 0, int32_t result = 0, bool useResult = false);
 
 int32_t poplsb(uint64_t &n, bool remove = true);
 
@@ -110,20 +110,26 @@ public:
     moveList moves;
     
     moveList genMoves(bool legal_, bool quiesce_);
-    int32_t eval(), val(int32_t sq);
+    int32_t eval(), val(int32_t sq, bool simple = false);
     board(string fen = START_FEN);
-    string toString(), printBB();
+    string toString(), printBB(), fen();
     bool makeMove(uint16_t m), attacked(int32_t sq = -1);
     int32_t lva(int32_t sq, uint64_t traded, int32_t p = -1);
     void unmakeMove();
+    bitset<781> bits;
 
 private:
-    uint64_t pawnAttacks(int32_t sq, bool moveGen, bool removeSame, int32_t p = -1), rookAttacks(int32_t sq, bool removeSame, int32_t p = -1, uint64_t omitBB = 0ULL), knightAttacks(int32_t sq, bool removeSame, int32_t p = -1), bishopAttacks(int32_t sq, bool removeSame, int32_t p = -1, uint64_t omitBB = 0ULL), queenAttacks(int32_t sq, bool removeSame, int32_t p = -1, uint64_t omitBB = 0ULL), kingAttacks(int32_t sq, bool removeSame, int32_t p = -1);
+    uint64_t pawnAttacks(int32_t sq, bool moveGen, bool removeSame, int32_t p = -1), rookAttacks(int32_t sq, bool removeSame, int32_t p = -1), knightAttacks(int32_t sq, bool removeSame, int32_t p = -1), bishopAttacks(int32_t sq, bool removeSame, int32_t p = -1), queenAttacks(int32_t sq, bool removeSame, int32_t p = -1), kingAttacks(int32_t sq, bool removeSame, int32_t p = -1);
     bool canCastle(int32_t i, int32_t j), occursTwice(uint64_t a);
-    void pushMove(uint16_t m), genPawnMoves(), genRookMoves(), genKnightMoves(), genBishopMoves(), genQueenMoves(), genKingMoves(), genPinMasks(int32_t p = -1, uint64_t traded = 0);
+    void pushMove(uint16_t m), genPawnMoves(), genRookMoves(), genKnightMoves(), genBishopMoves(), genQueenMoves(), genKingMoves(), genPinMasks();
 };
 
 uint16_t shortFromAlgebraic(string a, board* b);
+
+inline string algebraicSquare(int32_t sq){
+    string s = {char(col(sq)+int32_t('a')), char(row(sq)+int32_t('1'))};
+    return s;
+}
 
 string algebraicFromShort(uint16_t m);
 

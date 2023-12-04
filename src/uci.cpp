@@ -20,7 +20,7 @@ vector<string> uci::readCommand(){
 }
 
 void uci::takeInput(){
-    const map<string,int32_t> cmdnum {{"uci",0},{"debug",1},{"isready",2},{"setoption",3},{"ucinewgame",4},{"position",5},{"go",6},{"stop",7},{"quit",8}};
+    const map<string,int32_t> cmdnum {{"uci",0},{"debug",1},{"isready",2},{"setoption",3},{"ucinewgame",4},{"position",5},{"go",6},{"stop",7},{"quit",8},{"printfen",9},{"printboard",10}};
     const map<string,int32_t> gotoken {{"searchmoves",0},{"ponder",-2},{"wtime",2},{"btime",3},{"winc",4},{"binc",5},{"movestogo",6},{"depth",7},{"nodes",8},{"movetime",9},{"infinite",-1}};
     vector<string> cur;
     while (true){
@@ -138,6 +138,16 @@ void uci::takeInput(){
                 tasks.push(task());
                 condWaitForTask.notify_one();
                 return;
+            }
+            // the following cases are not "offical" UCI and are used purely for debugging
+            case 9:{ // printfen
+                cout << e.b.fen() << endl;
+                break;
+            }
+            case 10:{ // printboard
+                cout << e.b.toString();
+                if (e.debug)
+                    cout << e.b.printBB();
             }
         }
     }
