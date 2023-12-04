@@ -110,7 +110,7 @@ public:
     moveList moves;
     
     moveList genMoves(bool legal_, bool quiesce_);
-    int32_t eval(), val(int32_t sq);
+    int32_t eval(), val(int32_t sq, bool simple = false);
     board(string fen = START_FEN);
     string toString(), printBB(), fen();
     bool makeMove(uint16_t m), attacked(int32_t sq = -1);

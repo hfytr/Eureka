@@ -151,8 +151,9 @@ void uci::takeInput(){
     }
 }
 /*
-position fen rn1q1rk1/pb1pbppp/1p2pn2/6B1/2Pp4/2NBPN2/PP3PPP/R2Q1RK1 w - - 0 1 moves e3d4 d7d5 g5e3 b8c6 a1c1 a8c8 c4d5 f6d5 c3d5 e6d5 f3e5 e7g5 e3g5 d8g5 e5d7 f8d8 f2f4 g5e7 d7e5 c6d4 d3h7 g8h7 d1d3
-go depth 4
+debug on
+position fen 2rq1rk1/2p1npb1/1Pn1b1pp/p3p3/2NpP3/3P1NP1/PP1B1PBP/1R1Q1RK1 b - - 11 5
+go depth 1
 
 */ 
 void uci::processInput(){

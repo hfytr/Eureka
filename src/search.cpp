@@ -41,17 +41,21 @@ int32_t engine::initialTime(){
 /// @param ispv whether or not the current node is a pv node
 /// @return the score of a move (arbitrary number, used relatively)
 int32_t engine::scoreMove(uint16_t m, int32_t depth, pair<uint16_t,uint16_t> killer, bool ispv){
+    if (ispv && fullDepth-depth < pv.back().size() && m == pv.back()[fullDepth-depth])
+        return MAX32;
+
     if (tt.get(b.zobrist).m == m)
         return MAX32-1;
 
     bool capture = b.sqs[square2(m)] != 0;
     
     if (capture)
-        return 1000*b.val(square2(m)) + (1000-b.val(square1(m))) + MINMVVLVA;
+        return 1000*b.val(square2(m), 1) + (1000-b.val(square1(m)), 1) + MINMVVLVA;
     
     if (killer.first == m || killer.second == m)
         return MINMVVLVA-1;
     
+    return MINMVVLVA-2;
     return min(butterfly[b.player][square1(m)][square2(m)],MINMVVLVA-2);
 }
 
@@ -113,21 +117,17 @@ int32_t engine::negamax(int32_t depth, int32_t alpha, int32_t beta, pair<uint16_
     vector<uint16_t> childpv;
     bool illegal, gameOver = depth > 0;
 
+    if (b.gameHist[1] == 2420 && depth == 0)
+        cout << b.toString();
+
     // it is (mostly) possible to not make any captures and instead "stand pat" so this is alphas initial value
     // only applicable to quiescent search (when depth <= 0)
     if (depth <= 0){
         best.eval = b.eval();
         if (alpha < best.eval)
             alpha = best.eval;
-        if (best.eval > beta){
-            killer.second = killer.first;
-            killer.first = m;
-            ttEntry.eval = cur;
-            ttEntry.m = m;
-            ttEntry.type = CUT_NODE;
-            tt.push(ttEntry);
+        if (best.eval >= beta)
             return best.eval;
-        }
     }
 
     for (i = 0; i < moves.len; i++)
@@ -147,15 +147,17 @@ int32_t engine::negamax(int32_t depth, int32_t alpha, int32_t beta, pair<uint16_
             b.unmakeMove();
             continue;
         }
+        int32_t nodesprev = nodes;
         childpv.clear();
         cur = -negamax(depth-1, -beta, -alpha, killerNext, killerOpp, childpv, fullDepth-depth < pv.back().size() && ispv && m == pv.back()[fullDepth-depth]);
         b.unmakeMove();
 
-        if (cur > beta){
-            killer.second = killer.first;
-            killer.first = m;
-            if (b.sqs[square2(m)] == 0 && depth > 0)
+        if (cur >= beta){
+            if (b.sqs[square2(m)] == 0 && depth > 0){
+                killer.second = killer.first;
+                killer.first = m;
                 butterfly[b.player][square1(m)][square2(m)] += depth*depth;
+            }
             ttEntry.eval = cur;
             ttEntry.m = m;
             ttEntry.type = CUT_NODE;
@@ -169,18 +171,18 @@ int32_t engine::negamax(int32_t depth, int32_t alpha, int32_t beta, pair<uint16_
             if (cur > alpha){
                 alpha = cur;
                 entry.type = PV_NODE;
-            }
-            if (depth > 0){
-                parentpv.clear();
-                parentpv.resize(childpv.size()+1);
-                parentpv[0] = m;
-                for (j = 0; j < childpv.size(); j++)
-                    parentpv[j+1] = childpv[j];
+                if (depth > 0){
+                    parentpv.clear();
+                    parentpv.resize(childpv.size()+1);
+                    parentpv[0] = m;
+                    for (j = 0; j < childpv.size(); j++)
+                        parentpv[j+1] = childpv[j];
+                }
             }
         }
 
-        if (cur == MAX32)
-            return MAX32;
+        if (cur == CHECKMATE)
+            return CHECKMATE;
 
         gameOver = false;
 
@@ -190,7 +192,7 @@ int32_t engine::negamax(int32_t depth, int32_t alpha, int32_t beta, pair<uint16_
     
     if (gameOver && depth > 0){
         if (b.attacked())
-            return MIN32;
+            return CHECKMATED;
         return 0;
     }
 
@@ -235,11 +237,12 @@ uint16_t engine::search(int32_t depth){
             continue;
         }
 
+        int32_t nodesprev = nodes;
         childpv.clear();
-        cur = -negamax(depth-1, best.eval, MAX32, initKiller, initKiller, childpv, pv.back().size() > fullDepth-depth && m == pv.back()[fullDepth-depth]);
+        cur = -negamax(depth-1, MIN32, -best.eval, initKiller, initKiller, childpv, pv.back().size() > fullDepth-depth && m == pv.back()[fullDepth-depth]);
         b.unmakeMove();
 
-        cout << showMove(m,nodes,1);
+        cout << showMove(m,nodes-nodesprev,1);
         
         if (cur > best.eval || gameOver){
             best = xMove(cur, m);
@@ -248,13 +251,13 @@ uint16_t engine::search(int32_t depth){
                 nextpv[j+1] = childpv[j];
         }
 
-        if (cur == MAX32)
+        if (cur == CHECKMATE)
             return m;
 
         gameOver = false;
 
         if (debug)
-            cout << "info currmove " << algebraicFromShort(m) << " currmovenumber " << i+1 << " score cp " << cur << endl;
+            cout << "info currmove " << algebraicFromShort(m) << " currmovenumber " << i+1 << " score cp " << cur << endl << endl;
 
         if (over)
             return pv.back()[0];

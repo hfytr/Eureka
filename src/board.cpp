@@ -846,10 +846,15 @@ bool board::attacked(int32_t sq){
 }
 
 // finds the value of a piece by interpolating between midgame, and endgame values (from lookup table)
-int32_t board::val(int32_t sq){
-    int32_t piece = pType(sqs[sq]);
-    int32_t mg = mgpesto[piece-1][pCol(sqs[sq]) ? mirror(sq) : sq];
-    int32_t eg = egpesto[piece-1][pCol(sqs[sq]) ? mirror(sq) : sq];
+int32_t board::val(int32_t sq, bool simple){
+    int32_t piece = pType(sqs[sq]), mg, eg;
+    if (simple){
+        mg = mgval[piece-1];
+        eg = egval[piece-1];
+    } else {
+        mg = mgpesto[piece-1][pCol(sqs[sq]) ? mirror(sq) : sq];
+        eg = egpesto[piece-1][pCol(sqs[sq]) ? mirror(sq) : sq];
+    }
     return (mg * min(24,phase) + eg * (24-min(24,phase)))/24;
 }
 

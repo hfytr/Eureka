@@ -16,6 +16,8 @@
 #define CUT_NODE 0
 #define ALL_NODE 1
 #define PV_NODE 2
+#define CHECKMATE MAX32-1
+#define CHECKMATED MIN32+1
 
 extern int32_t DeBruijnLookup[64];
 extern int32_t rookShift[64];
