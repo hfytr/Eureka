@@ -140,7 +140,7 @@ int32_t engine::negamax(int32_t depth, int32_t alpha, int32_t beta, pair<uint16_
         return entry.eval;
 
     moveList moves = b.genMoves(false, depth <= 0);
-    TTnode ttEntry = TTnode(b.zobrist,0,0,b.gameLen,max(depth,0),ALL_NODE);
+    TTnode ttEntry = TTnode(b.zobrist,0,0,max(depth,0),ALL_NODE);
     int32_t j , i, curInd, cur;
     xMove best;
     uint16_t m;

@@ -119,9 +119,9 @@ public:
     bitset<781> bits;
 
 private:
-    uint64_t pawnAttacks(int32_t sq, bool moveGen, bool removeSame, int32_t p = -1), rookAttacks(int32_t sq, bool removeSame, int32_t p = -1), knightAttacks(int32_t sq, bool removeSame, int32_t p = -1), bishopAttacks(int32_t sq, bool removeSame, int32_t p = -1), queenAttacks(int32_t sq, bool removeSame, int32_t p = -1), kingAttacks(int32_t sq, bool removeSame, int32_t p = -1);
+    uint64_t pawnAttacks(int32_t sq, bool moveGen, bool removeSame, int32_t p = -1), rookAttacks(int32_t sq, bool removeSame, int32_t p = -1, uint64_t omitBB = 0ULL), knightAttacks(int32_t sq, bool removeSame, int32_t p = -1), bishopAttacks(int32_t sq, bool removeSame, int32_t p = -1, uint64_t omitBB = 0ULL), queenAttacks(int32_t sq, bool removeSame, int32_t p = -1, uint64_t omitBB = 0ULL), kingAttacks(int32_t sq, bool removeSame, int32_t p = -1);
     bool canCastle(int32_t i, int32_t j), occursTwice(uint64_t a);
-    void pushMove(uint16_t m), genPawnMoves(), genRookMoves(), genKnightMoves(), genBishopMoves(), genQueenMoves(), genKingMoves(), genPinMasks();
+    void pushMove(uint16_t m), genPawnMoves(), genRookMoves(), genKnightMoves(), genBishopMoves(), genQueenMoves(), genKingMoves(), genPinMasks(int32_t p = -1, uint64_t traded = 0);
 };
 
 uint16_t shortFromAlgebraic(string a, board* b);
