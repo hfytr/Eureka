@@ -33,7 +33,7 @@ TTnode TT::get(uint64_t hash){
     for (int32_t i = 0; i < NUM_BUCKETS; i++)
         if (container[hash%size][i].hash == hash)
             return container[hash%size][i];
-    return TTnode();
+    return {};
 }
 
 void TT::clear(){

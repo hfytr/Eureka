@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.27)
+cmake_minimum_required(VERSION 3.26)
 project(Eureka)
 add_compile_options(-fsanitize=undefined -fsanitize=address -g)
 add_link_options(-fsanitize=undefined -fsanitize=address)

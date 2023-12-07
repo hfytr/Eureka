@@ -13,11 +13,11 @@
 #define MIN32 (INT_MIN+1)
 #define MAX32 (INT_MAX)
 #define MINMVVLVA (MAX32 - 2000000)
-#define CUT_NODE 0
-#define ALL_NODE 1
+#define FAIL_HIGH 0
+#define FAIL_LOW 1
 #define PV_NODE 2
-#define CHECKMATE MAX32-1
-#define CHECKMATED MIN32+1
+#define CHECKMATE (MAX32-1)
+#define CHECKMATED (MIN32+1)
 #define NUM_BUCKETS 4
 
 extern int32_t DeBruijnLookup[64];

@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <vector>
 #include "constants.h"
-using namespace std;
+
 
 class TTnode {
 public:
@@ -12,7 +12,7 @@ public:
     int32_t eval;
     uint16_t m;
     uint8_t type;
-    int8_t depth;
+    uint8_t depth;
 
     TTnode(uint64_t hash_=0, int32_t eval_=0, uint16_t m_=0, uint8_t depth_=0, uint8_t type_ = 0){
         hash=hash_;eval=eval_;m=m_;depth=depth_;type=type_;
@@ -29,7 +29,7 @@ public:
 class TT {
 public:
     int32_t size;
-    vector<TTbucket> container;
+    std::vector<TTbucket> container;
     TT(uint32_t s);
     void push(TTnode a), clear(), resize(uint32_t s);
     TTnode get(uint64_t hash);

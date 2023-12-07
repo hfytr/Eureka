@@ -3,31 +3,29 @@
 #include "board.h"
 #include <queue>
 #include <map>
-#include <condition_variable>
-#include <cstdint>
 #include <mutex>
 #include <iostream>
 
-vector<string> uci::readCommand(){
-    vector<string> tr;
-    string cur;
-    cin >> cur; tr.push_back(cur);
-    while (cin.peek() != '\n'){
-        cin >> cur;
+std::vector<std::string> uci::readCommand(){
+    std::vector<std::string> tr;
+    std::string cur;
+    std::cin >> cur; tr.push_back(cur);
+    while (std::cin.peek() != '\n'){
+        std::cin >> cur;
         tr.push_back(cur);
     }
     return tr;
 }
 
 void uci::takeInput(){
-    const map<string,int32_t> cmdnum {{"uci",0},{"debug",1},{"isready",2},{"setoption",3},{"ucinewgame",4},{"position",5},{"go",6},{"stop",7},{"quit",8},{"printfen",9},{"printboard",10}};
-    const map<string,int32_t> gotoken {{"searchmoves",0},{"ponder",-2},{"wtime",2},{"btime",3},{"winc",4},{"binc",5},{"movestogo",6},{"depth",7},{"nodes",8},{"movetime",9},{"infinite",-1}};
-    vector<string> cur;
+    const std::map<std::string,int32_t> cmdnum {{"uci",0},{"debug",1},{"isready",2},{"setoption",3},{"ucinewgame",4},{"position",5},{"go",6},{"stop",7},{"quit",8},{"printfen",9},{"printboard",10}};
+    const std::map<std::string,int32_t> gotoken {{"searchmoves",0},{"ponder",-2},{"wtime",2},{"btime",3},{"winc",4},{"binc",5},{"movestogo",6},{"depth",7},{"nodes",8},{"movetime",9},{"infinite",-1}};
+    std::vector<std::string> cur;
     while (true){
         cur = readCommand();
         switch(cmdnum.at(cur[0])){
             case 0:{ // uci
-                cout << "id name Eureka 1.0\nid author Archim Jhunjhunwala\noption name Hash type spin default 1 min 1\nuciok" << endl;
+                std::cout << "id name Eureka 1.0\nid author Archim Jhunjhunwala\noption name Hash type spin default 1 std::min 1\nuciok" << std::endl;
                 break;
             }
             case 1:{ // debug
@@ -35,13 +33,13 @@ void uci::takeInput(){
                 break;
             }
             case 2:{ // isready
-                unique_lock<mutex> lock{mx};
+                std::unique_lock<std::mutex> lock{mx};
                 condReady.wait(
                     lock,
                     [this] {return tasks.empty();}
                 );
                 lock.unlock();
-                cout << "readyok" << endl;
+                std::cout << "readyok" << std::endl;
                 break;
             }
             case 3:{ // setoption
@@ -54,7 +52,7 @@ void uci::takeInput(){
                 break;
             }
             case 5:{ // position
-                string fen;
+                std::string fen;
                 int32_t i;
                 if (cur[1] == "startpos"){
                     fen = START_FEN;
@@ -68,9 +66,9 @@ void uci::takeInput(){
                 break;
             }
             case 6:{ // go
-                unique_lock<mutex> lock{mx};
+                std::unique_lock<std::mutex> lock{mx};
                 task t;
-                string token;
+                std::string token;
                 for (int32_t i = 1; i < cur.size(); i++){
                     if (gotoken.count(cur[i]) == 0){
                         switch(gotoken.at(token)){
@@ -134,20 +132,20 @@ void uci::takeInput(){
                 break;
             }
             case 8:{ // quit
-                over = true;
-                tasks.push(task());
+                quit = true;
+                tasks.emplace();
                 condWaitForTask.notify_one();
                 return;
             }
             // the following cases are not "offical" UCI and are used purely for debugging
             case 9:{ // printfen
-                cout << e.b.fen() << endl;
+                std::cout << e.b.fen() << std::endl;
                 break;
             }
             case 10:{ // printboard
-                cout << e.b.toString();
+                std::cout << e.b.toString();
                 if (e.debug)
-                    cout << e.b.printBB();
+                    std::cout << e.b.printBB();
             }
         }
     }
@@ -156,15 +154,17 @@ void uci::takeInput(){
 void uci::processInput(){
     task t;
     while (true){
-        unique_lock<mutex> lock{mx};
+        std::unique_lock<std::mutex> lock{mx};
         condWaitForTask.wait(
             lock,
             [this] {return !tasks.empty();}
         );
         lock.unlock();
         t = tasks.front();
+        if (quit)
+            return;
         if (!t.ponder)
-            cout << ("bestmove " + algebraicFromShort(e.getMove(t))) << endl;;
+            std::cout << ("bestmove " + algebraicFromShort(e.getMove(t))) << std::endl;
         tasks.pop();
         if (tasks.empty())
             condReady.notify_one();

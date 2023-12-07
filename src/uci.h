@@ -11,10 +11,10 @@ public:
     void processInput(), takeInput();
 private:
     engine e;
-    bool over;
-    queue<task> tasks;
-    vector<string> readCommand();
-    condition_variable condWaitForTask, condReady;
-    mutex mx;
+    bool quit = false;
+    std::queue<task> tasks;
+    std::vector<std::string> readCommand();
+    std::condition_variable condWaitForTask, condReady;
+    std::mutex mx;
 };
 #endif

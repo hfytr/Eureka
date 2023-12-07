@@ -2,14 +2,12 @@
 #include <string>
 #include <climits>
 #include <iostream>
-#include <bitset>
 #include "board.h"
 #include "constants.h"
-using namespace std;
 
 void moveList::push(uint16_t m){
-    container[len] = m;
-    len++;
+    container[length] = m;
+    length++;
 }
 
 uint16_t moveList::operator[](int32_t i){
@@ -58,47 +56,47 @@ int32_t count1s(uint64_t n){
 }
 
 // prints bitboard
-string bin(uint64_t n){
-    string rows[8];
+std::string bin(uint64_t n){
+    std::string rows[8];
     for (int32_t i = 0; i < 8; i++){
         for (int32_t j = 0; j < 8; j++){
-            rows[i] += to_string(n%2);
+            rows[i] += std::to_string(n%2);
             n >>= 1;
         }
         rows[i] += '\n';
     }
-    string s = "";
+    std::string s;
     for (int32_t i = 7; i >= 0; i--)
         s += rows[i];
     return s+'\n';
 }
 
-// returns attack bitboard given square, whether or not to include the edge of the board (1 or 0) and blocker pieces
+// returns attack bitboard given square, whether to include the edge of the board (1 or 0) and blocker pieces
 // blockers are treated as ENEMY pieces -> the edge can always be attacked and is sometimes unnecessary
 uint64_t rookMask(int32_t sq, int32_t edge, uint64_t bb){
     uint64_t tr = 0;
     for (int32_t i = col(sq); i < 7+edge; i++){
         if (i != col(sq))
             toggle(tr, sq-col(sq)+i);
-        if (bb & 1ULL << sq-col(sq)+i)
+        if (bb & 1ULL << (sq-col(sq)+i))
             break;
     }
     for (int32_t i = col(sq); i > 0-edge; i--){
         if (i != col(sq))
             toggle(tr, sq-col(sq)+i);
-        if (bb & 1ULL << sq-col(sq)+i)
+        if (bb & 1ULL << (sq-col(sq)+i))
             break;
     }
     for (int32_t i = row(sq); i < 7+edge; i++){
         if (i != row(sq))
             toggle(tr, col(sq)+i*8);
-        if (bb & 1ULL << col(sq)+i*8)
+        if (bb & 1ULL << (col(sq)+i*8))
             break;
     }
     for (int32_t i = row(sq); i > 0-edge; i--){
         if (i != row(sq))
             toggle(tr, col(sq)+i*8);
-        if (bb & 1ULL << col(sq)+i*8)
+        if (bb & 1ULL << (col(sq)+i*8))
             break;
     }
     return tr;
@@ -106,24 +104,24 @@ uint64_t rookMask(int32_t sq, int32_t edge, uint64_t bb){
 
 uint64_t bishopMask(int32_t sq, int32_t edge, uint64_t bb){
     uint64_t tr = 0;
-    for (int32_t i = 1; i < min(7+edge-row(sq),7+edge-col(sq)); i++){
+    for (int32_t i = 1; i < std::min(7+edge-row(sq),7+edge-col(sq)); i++){
         toggle(tr, (row(sq)+i)*8+col(sq)+i);
-        if (bb & 1ULL << (row(sq)+i)*8+col(sq)+i)
+        if (bb & 1ULL << ((row(sq)+i)*8+col(sq)+i))
             break;
     }
-    for (int32_t i = 1; i < min(7+edge-row(sq),col(sq)+edge); i++){
+    for (int32_t i = 1; i < std::min(7+edge-row(sq),col(sq)+edge); i++){
         toggle(tr, (row(sq)+i)*8+col(sq)-i);
-        if (bb & 1ULL << (row(sq)+i)*8+col(sq)-i)
+        if (bb & 1ULL << ((row(sq)+i)*8+col(sq)-i))
             break;
     }
-    for (int32_t i = 1; i < min(row(sq)+edge,7+edge-col(sq)); i++){
+    for (int32_t i = 1; i < std::min(row(sq)+edge,7+edge-col(sq)); i++){
         toggle(tr, (row(sq)-i)*8+col(sq)+i);
-        if (bb & 1ULL << (row(sq)-i)*8+col(sq)+i)
+        if (bb & 1ULL << ((row(sq)-i)*8+col(sq)+i))
             break;
     }
-    for (int32_t i = 1; i < min(row(sq)+edge,col(sq)+edge); i++){
+    for (int32_t i = 1; i < std::min(row(sq)+edge,col(sq)+edge); i++){
         toggle(tr, (row(sq)-i)*8+col(sq)-i);
-        if (bb & 1ULL << (row(sq)-i)*8+col(sq)-i)
+        if (bb & 1ULL << ((row(sq)-i)*8+col(sq)-i))
             break;
     }
     return tr;
@@ -163,7 +161,7 @@ uint64_t pawnMask(int32_t sq, bool player){
     return tr;
 }
 
-uint16_t shortFromAlgebraic(string a, board* b){
+uint16_t shortFromAlgebraic(std::string a, board* b){
     if (a == "stop")
         return 0;
 
@@ -197,21 +195,21 @@ uint16_t shortFromAlgebraic(string a, board* b){
     return getShort(sq1,sq2,prom,spec);
 }
 
-string algebraicFromShort(uint16_t m){
+std::string algebraicFromShort(uint16_t m){
     int32_t sq1 = square1(m), sq2 = square2(m), prom = promotion(m), spec = special(m);
-    string s = algebraicSquare(sq1) + algebraicSquare(sq2);
+    std::string s = algebraicSquare(sq1) + algebraicSquare(sq2);
     if (spec == PROMOTE)
         s += int2Letter[prom+7];
     return s;
 }
 
-string showMove(uint16_t m, int32_t result, bool useResult){
-    const string specString[4] = {"None", "Promotion", "EP", "Castle"};
-    return "short: " + to_string(m) + " algebraic: " + algebraicFromShort(m) + " sq1: " + to_string(square1(m)) + " sq2: " + to_string(square2(m)) + " promote: " + to_string(promotion(m)) + " special: " + specString[special(m)] + (useResult ? ("\nresult: " + to_string(result) + "\n") : "\n");
+std::string showMove(uint16_t m, int32_t result, bool useResult){
+    const std::string specString[4] = {"None", "Promotion", "EP", "Castle"};
+    return "short: " + std::to_string(m) + " algebraic: " + algebraicFromShort(m) + " sq1: " + std::to_string(square1(m)) + " sq2: " + std::to_string(square2(m)) + " promote: " + std::to_string(promotion(m)) + " special: " + specString[special(m)] + (useResult ? ("\nresult: " + std::to_string(result) + "\n") : "\n");
 }
 
 // FEN notation: https://en.wikipedia.org/wiki/Forsyth–Edw  ards_Notation
-board::board(string fen){
+board::board(std::string fen){
     // maps letter to corresponding piece number
     // 1 (b) -> 4, 10(k) -> 6
     int32_t posToNum[26] = {0,4,0,0,0,0,0,0,0,0,6,0,0,3,0,1,5,2,0,0,0,0,0,0,0,0};
@@ -240,10 +238,10 @@ board::board(string fen){
         }
         i++; col++;
     }
+
     i++; player = fen[i] == 'w' ? 0 : 1;
     i += 2; int32_t j = 0;
-    const int32_t k = i;
-    string castleChar = "KQkq";
+    std::string castleChar = "KQkq";
     for (j = 0; j < 2; j++){
         for (int32_t k = 0; k < 2; k++){
             if (fen[i] != castleChar[j*2+k])
@@ -263,22 +261,22 @@ board::board(string fen){
     } i += 3;
     fiftyCount = (int32_t(fen[i])-int32_t('0'))*10 + fen[i+1] != ' ' ? int32_t(fen[i+1])-int32_t('0') : 0;
     bitbs[0][0] = 0; bitbs[1][0] = 0;
-    for (int32_t i = 0; i < 2; i++)
-        for (int32_t j = 1; j < 7; j++)
+    for (i = 0; i < 2; i++)
+        for (j = 1; j < 7; j++)
             bitbs[i][0] |= bitbs[i][j];
     
     // initialise rook/bishup lookup tables
-    for (int32_t i = 0; i < 64; i++){
+    for (i = 0; i < 64; i++){
         uint64_t mask = rookMasks[i];
         int32_t n = count1s(mask);
-        for (int32_t j = 0; j < 1 << n; j++){
+        for (j = 0; j < 1 << n; j++){
             uint64_t bb = intToBlocker(j, mask);
             int32_t ind = index(bb,rookMagics[i],rookShift[i]);
             blockedRookMasks[i][ind] = rookMask(i,1,bb);
         }
         mask = bishopMasks[i];
         n = count1s(mask);
-        for (int32_t j = 0; j < 1 << n; j++){
+        for (j = 0; j < 1 << n; j++){
             uint64_t bb = intToBlocker(j, mask);
             int32_t ind = index(bb,bishopMagics[i],bishopShift[i]);
             blockedBishopMasks[i][ind] = bishopMask(i,1,bb);
@@ -286,8 +284,8 @@ board::board(string fen){
     }
 
     // initialise piece square tables: adds the base piece value to the square value for each piece / game phase
-    for (int32_t i = 0; i < 6; i++){
-        for (int32_t j = 0; j < 64; j++){
+    for (i = 0; i < 6; i++){
+        for (j = 0; j < 64; j++){
             mgpesto[i][j] = mgval[i] + mgpestoPre[i][j^56];
             egpesto[i][j] = egval[i] + egpestoPre[i][j^56];
         }
@@ -297,7 +295,7 @@ board::board(string fen){
     int32_t sq;
     uint64_t pieces = bitbs[0][0] | bitbs[1][0];
     while (pieces){
-        int32_t sq = poplsb(pieces);
+        sq = poplsb(pieces);
         zobrist ^= zrn[zobristPieceIndex(sqs[sq],sq)];
         bits.flip(zobristPieceIndex(sqs[sq],sq));
     }
@@ -326,12 +324,12 @@ board::board(string fen){
         bits.flip(ZEP+col(square2(gameHist[0])));
     }
     
-    repetition.push_back(vector<uint64_t> (0));
+    repetition.push_back(std::vector<uint64_t> (0));
     repetition.back().push_back(zobrist);
 }
 
-string board::fen(){
-    string fen;
+std::string board::fen(){
+    std::string fen;
     for (int32_t i = 7; i >= 0; i--){
         for (int32_t j = 0; j < 8; j++){
             if (sqs[i*8+j] == 0){
@@ -348,7 +346,7 @@ string board::fen(){
 
     fen += player ? " b " : " w ";
 
-    string castleChar = "KQkq";
+    std::string castleChar = "KQkq";
     for (int32_t i = 0; i < 4; i++)
         if (canCastle(i/2,i%2))
             fen += castleChar[i];
@@ -361,7 +359,7 @@ string board::fen(){
     else
         fen += " - ";
     
-    fen += to_string(gameLen) + " " + to_string(gameLen/2);
+    fen += std::to_string(gameLen) + " " + std::to_string(gameLen/2);
     
     return fen;
 }
@@ -383,9 +381,9 @@ bool board::occursTwice(uint64_t a){
     return false;
 }
 
-// returns the string representation of the board based off this.sqs
-string board::toString(){
-    string s = "  ";
+// returns the std::string representation of the board based off this.sqs
+std::string board::toString(){
+    std::string s = "  ";
     for (int32_t i = 7; i >= 0; i--){
         for (int32_t j = 0; j < 8; j++){
             s += int2Letter[sqs[i*8+j]];
@@ -397,8 +395,8 @@ string board::toString(){
 }
 
 // prints all bitboards
-string board::printBB(){
-    string s;
+std::string board::printBB(){
+    std::string s;
     for (int32_t i = 0; i < 14; i++)
         s += bin(bitbs[pCol(i)][pType(i)]);
     return s+'\n';
@@ -435,14 +433,14 @@ bool board::makeMove(uint16_t m){
                 zobrist ^= zrn[ZCASTLE + opp(player)*2];
                 bits.flip(ZCASTLE + opp(player)*2);
             }
-            castle[opp(player)][0] = min(castle[opp(player)][0], gameLen);
+            castle[opp(player)][0] = std::min(castle[opp(player)][0], gameLen);
         }
         if (col(sq2) == 7){
             if (canCastle(opp(player),1)){
                 zobrist ^= zrn[ZCASTLE + opp(player)*2 + 1];
                 bits.flip(ZCASTLE + opp(player)*2 + 1);
             }
-            castle[opp(player)][1] = min(castle[opp(player)][1], gameLen);
+            castle[opp(player)][1] = std::min(castle[opp(player)][1], gameLen);
         }
     }
     // change castling rights if moving rook
@@ -452,14 +450,14 @@ bool board::makeMove(uint16_t m){
                 zobrist ^= zrn[ZCASTLE + player*2];
                 bits.flip(ZCASTLE + player*2);
             }
-            castle[player][0] = min(castle[player][0], gameLen);
+            castle[player][0] = std::min(castle[player][0], gameLen);
         }
         else if (col(sq1) == 7){
             if (canCastle(player,1)){
                 zobrist ^= zrn[ZCASTLE + player*2 + 1];
                 bits.flip(ZCASTLE + player*2 + 1);
             }
-            castle[player][1] = min(castle[player][1], gameLen);
+            castle[player][1] = std::min(castle[player][1], gameLen);
         }
     }
     // change castling rights if moving king
@@ -468,19 +466,19 @@ bool board::makeMove(uint16_t m){
             zobrist ^= zrn[ZCASTLE + player*2];
             bits.flip(ZCASTLE + player*2);
         }
-        castle[player][0] = min(castle[player][0], gameLen);
+        castle[player][0] = std::min(castle[player][0], gameLen);
         if (canCastle(player,1)){
             zobrist ^= zrn[ZCASTLE + player*2 + 1];
             bits.flip(ZCASTLE + player*2 + 1);
         }
-        castle[player][1] = min(castle[player][1], gameLen);
+        castle[player][1] = std::min(castle[player][1], gameLen);
     }
     
     if (toPiece == 0 && pType(fromPiece) != 1)
         fiftyCount++;
     else {
         fiftyCount = 0;
-        repetition.push_back(vector<uint64_t> (0));
+        repetition.push_back(std::vector<uint64_t> (0));
     }
     
     captured[gameLen] = toPiece;
@@ -606,7 +604,7 @@ void board::unmakeMove(){
     gameLen--;
 }
 
-// functions to generate attack bitboards for the various pieces given piece square, side, and whether or not to remove friendly pieces;
+// functions to generate attack bitboards for the various pieces given piece square, side, and whether to remove friendly pieces;
 uint64_t board::knightAttacks(int32_t sq, bool removeSame = true, int32_t p){
     p = p == -1 ? player : p;
     uint64_t tr = knightMasks[sq];
@@ -741,10 +739,10 @@ void board::genKingMoves(){
     
     if (!attacked(i)){
         if (canCastle(player,1))
-            if (!attacked(i+1) && !attacked(i+2) && (bitbs[1][0] | bitbs[0][0]) << 1+opp(player)*56 >> 62 == 0)
+            if (!attacked(i+1) && !attacked(i+2) && (bitbs[1][0] | bitbs[0][0]) << (1+opp(player)*56) == 0)
                 pushMove(getShort(i,i+2,0,CASTLE));
         if (canCastle(player,0))
-            if (!attacked(i-1) && !attacked(i-2) && (bitbs[1][0] | bitbs[0][0]) << 4+opp(player)*56 >> 61 == 0)
+            if (!attacked(i-1) && !attacked(i-2) && (bitbs[1][0] | bitbs[0][0]) << (4+opp(player)*56) == 0)
                 pushMove(getShort(i,i-2,0,CASTLE));
     }
 }
@@ -784,9 +782,9 @@ void board::genPinMasks(int32_t p, uint64_t traded){
     pins[0] = 0ULL;
     pins[1] = 0ULL;
     p = p == -1 ? player : p;
-    // to find rook pins, treat the king as a rook and find its attack set with enemy pieces as blockers (call this a), intersecting with enemy rook/queens finds possible pinners.
-    // for each pinner find its attack set with enemy king as blocker, then intersect this with a to find the "pinning ray"
-    // if the ray has no opponent pieces (besides pinner), and only 1 friendly piece (besides king) it is a pin ray and it is added to pins
+    // to find rook pins, treat the king as a rook and find its attack set with enemy pieces as blockers (call this x), intersecting with enemy rook/queens finds possible pinners.
+    // for each pinner find its attack set with enemy king as blocker, then intersect this with x to find the "pinning ray"
+    // if the ray has no opponent pieces (besides pinner), and only 1 friendly piece (besides king) it is a pin ray,and it is added to pins
     // similar for bishops
     int32_t kSq = poplsb(bitbs[p][6], false), pinner;
     // kMask[i]: i = 0 for rook, 1 for cishop. is attack seet with enemy pieces as blockers
@@ -818,8 +816,8 @@ void board::genPinMasks(int32_t p, uint64_t traded){
 moveList board::genMoves(bool legal_, bool quiesce_){
     legal = legal_;
     quiesce = quiesce_;
-    moves = moveList();
     pins[0] = 0; pins[1] = 0;
+    moves = moveList();
     if (legal)
         genPinMasks();
     genPawnMoves();
@@ -834,7 +832,7 @@ moveList board::genMoves(bool legal_, bool quiesce_){
 }
 
 // for each piece, find the attack set of a piece on sq
-// if intersecting this with the corresponding enemy piece yileds a non zero, return true
+// if intersecting this with the corresponding enemy piece yileds a non-zero, return true
 // sq defaults to kings square
 bool board::attacked(int32_t sq){
     if (sq == -1)
@@ -855,6 +853,8 @@ bool board::attacked(int32_t sq){
 // finds the value of a piece by interpolating between midgame, and endgame values (from lookup table)
 int32_t board::val(int32_t sq, bool simple){
     int32_t piece = pType(sqs[sq]), mg, eg;
+    if (piece == 0)
+        std::cout << toString() << printBB();
     if (simple){
         mg = mgval[piece-1];
         eg = egval[piece-1];
@@ -862,7 +862,7 @@ int32_t board::val(int32_t sq, bool simple){
         mg = mgpesto[piece-1][pCol(sqs[sq]) ? mirror(sq) : sq];
         eg = egpesto[piece-1][pCol(sqs[sq]) ? mirror(sq) : sq];
     }
-    return (mg * min(24,phase) + eg * (24-min(24,phase)))/24;
+    return (mg * std::min(24,phase) + eg * (24-std::min(24,phase)))/24;
 }
 
 // goes through all pieces, adding friendly piece values, and subtracting opponent pieces

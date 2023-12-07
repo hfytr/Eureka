@@ -3,7 +3,6 @@
 #include <climits>
 #include <bitset>
 #include "constants.h"
-using namespace std;
 
 #ifndef BOARD_H
 #define BOARD_H
@@ -33,22 +32,23 @@ using namespace std;
 
 class moveList {
 public:
-    int32_t len = 0;
-    uint16_t container[256];
-
-    moveList(){}
+    moveList()= default;
     void push(uint16_t m), swap(int32_t i, int32_t j);
     uint16_t operator[](int32_t i);
+    virtual uint16_t len(){ return length; }
+protected:
+    uint16_t length = 0;
+    uint16_t container[256];
 };
 
-string bin(uint64_t n);
+std::string bin(uint64_t n);
 
 // gets index given magic number, blocker bitboard, and shift
 // MAGIC BITBOARDS: https://www.chessprogramming.org/Magic_Bitboards
 #define index(bb, magic, shift) ((int32_t) (bb*magic >> shift))
 
 // moves are stored in uint16. 6 bits for start/end squares each. 2 bits for special flag, 2 bits for promotion piece
-// these extract information from a uint16_t move
+// these extract information from auint16_t move
 #define square1(m) ((int32_t) m&63)
 #define square2(m) ((int32_t) ((m & 4032) >> 6))
 #define promotion(m) ((int32_t) ((m & 16128) >> 12)+2)
@@ -60,7 +60,7 @@ inline uint16_t getShort(uint32_t square1, uint32_t square2, uint32_t promote=0,
 }
 
 // prints move
-string showMove(uint16_t m = 0, int32_t result = 0, bool useResult = false);
+std::string showMove(uint16_t m = 0, int32_t result = 0, bool useResult = false);
 
 int32_t poplsb(uint64_t &n, bool remove = true);
 
@@ -102,21 +102,21 @@ public:
     int32_t phase = 0;
     // repetion.back() is all positions which need to be searched when checking for 3-move repetition
     // not all positions need to be searched as after a capture/pawn move it is impossible that positions after will repeat positions before
-    // when this occurs we do repetition.push_back(empty vector)
+    // when this occurs we do repetition.push_back(empty std::vector)
     // positions are stored by zobrist key
-    vector<vector<uint64_t>> repetition;
+    std::vector<std::vector<uint64_t>> repetition;
     uint64_t pins[2];
-    bool legal,quiesce;
+    bool legal = false, quiesce = false;
     moveList moves;
-    
+
     moveList genMoves(bool legal_, bool quiesce_);
     int32_t eval(), val(int32_t sq, bool simple = false);
-    board(string fen = START_FEN);
-    string toString(), printBB(), fen();
+    explicit board(std::string fen = START_FEN);
+    std::string toString(), printBB(), fen();
     bool makeMove(uint16_t m), attacked(int32_t sq = -1);
     int32_t lva(int32_t sq, uint64_t traded, int32_t p = -1);
     void unmakeMove();
-    bitset<781> bits;
+    std::bitset<781> bits;
 
 private:
     uint64_t pawnAttacks(int32_t sq, bool moveGen, bool removeSame, int32_t p = -1), rookAttacks(int32_t sq, bool removeSame, int32_t p = -1, uint64_t omitBB = 0ULL), knightAttacks(int32_t sq, bool removeSame, int32_t p = -1), bishopAttacks(int32_t sq, bool removeSame, int32_t p = -1, uint64_t omitBB = 0ULL), queenAttacks(int32_t sq, bool removeSame, int32_t p = -1, uint64_t omitBB = 0ULL), kingAttacks(int32_t sq, bool removeSame, int32_t p = -1);
@@ -124,13 +124,13 @@ private:
     void pushMove(uint16_t m), genPawnMoves(), genRookMoves(), genKnightMoves(), genBishopMoves(), genQueenMoves(), genKingMoves(), genPinMasks(int32_t p = -1, uint64_t traded = 0);
 };
 
-uint16_t shortFromAlgebraic(string a, board* b);
+uint16_t shortFromAlgebraic(std::string a, board* b);
 
-inline string algebraicSquare(int32_t sq){
-    string s = {char(col(sq)+int32_t('a')), char(row(sq)+int32_t('1'))};
+inline std::string algebraicSquare(int32_t sq){
+    std::string s = {char(col(sq)+int32_t('a')), char(row(sq)+int32_t('1'))};
     return s;
 }
 
-string algebraicFromShort(uint16_t m);
+std::string algebraicFromShort(uint16_t m);
 
 #endif
