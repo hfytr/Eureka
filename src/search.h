@@ -8,7 +8,7 @@
 #include "tt.h"
 #include "board.h"
 #include "constants.h"
-using namespace std;
+
 using namespace std::chrono;
 
 class xMove{
@@ -33,23 +33,40 @@ public:
 class engine {
 public:
     board b;
-    int64_t nodes;
+    int64_t nodes{};
     task t;
-    vector<vector<uint16_t>> pv;
-    vector<int32_t> pveval;
+    std::vector<std::vector<uint16_t>> pv;
+    std::vector<int32_t> pveval;
+    std::vector<std::pair<uint16_t,uint16_t>> killers;
     time_point<steady_clock> start;
-    int32_t milli = 2 * 1000, fullDepth = 0, selDepth = 0;
+    int32_t fullDepth = 0;
     TT tt = TT(DEFAULTTTSIZE);
-    int32_t butterfly[2][64][64] = {}, count = 0;
-    bool over, debug = false, forceStop;
+    int32_t butterfly[2][64][64] = {};
+    bool over{}, debug = false, forceStop = false;
+    uint8_t rootType = PV_NODE;
 
-    int32_t scoreMove(uint16_t m, int32_t depth, pair<uint16_t,uint16_t> killer, bool ispv), see(uint16_t m = 0, int32_t sq = -1);
-    int32_t negamax(int32_t depth, int32_t alpha, int32_t beta, pair<uint16_t,uint16_t> killerOpp, pair<uint16_t,uint16_t> &killer, vector<uint16_t> &parentpv, bool ispv);
+    int32_t see(uint16_t m = 0, int32_t sq = -1);
+    int32_t negamax(uint8_t depth, int32_t alpha, int32_t beta, std::vector<uint16_t> &parentpv, bool ispv), quiesce(int32_t alpha, int32_t beta);
     int32_t initialTime();
-    uint16_t search(int32_t depth);
+    xMove search(uint8_t depth, int32_t alpha, int32_t beta);
     uint16_t getMove(task t);
     bool checkOver(), isDbgLine();
     void printInfo();
-    engine(){};
+    engine()= default;
 };
+
+class scoredMoveList : moveList {
+public:
+    scoredMoveList(uint8_t depth_, bool ispv_, std::pair<uint16_t,uint16_t> killers_, engine* e_, moveList list);
+    uint16_t get();
+    uint16_t len(){ return length; }
+private:
+    int32_t scores[256], i = 0;
+    uint8_t depth;
+    bool ispv;
+    std::pair<uint16_t, uint16_t> killers;
+    engine* e;
+    int32_t scoreMove(uint16_t m);
+};
+
 #endif

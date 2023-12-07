@@ -1,20 +1,18 @@
-#include <vector>
 #include <string>
-#include <climits>
-#include<iostream>
+#include <iostream>
 #include "board.h"
 #include "constants.h"
 #include "search.h"
 #include "perft.h"
 #include "terminal.h"
-using namespace std;
+
 
 terminal::terminal(){
-    string input;
+    std::string input;
     while (input != "S"){
         system("clear");
-        cout << "Would you like to run perft (enter P), play a game (enter G), or stop (enter S)?\n--> ";
-        cin >> input;
+        std::cout << "Would you like to run perft (enter P), play a game (enter G), or stop (enter S)?\n--> ";
+        std::cin >> input;
         if (input == "P")
             runPerft();
         else
@@ -25,9 +23,9 @@ terminal::terminal(){
 void terminal::runPerft(){
     system("clear");
     perft p;
-    string _;
-    cout << "\nEnter anything to continue\n--> ";
-    cin >> _;
+    std::string _;
+    std::cout << "\nEnter anything to continue\n--> ";
+    std::cin >> _;
 }
 
 void terminal::runGame(){
@@ -35,22 +33,21 @@ void terminal::runGame(){
     system("clear");
     bool running = true;
     uint16_t m;
-    moveList moves;
-    string input;
-    cout << "What starting position would you like (enter a FEN string)? Put START for default.\n--> ";
-    cin >> input;
+    std::string input;
+    std::cout << "What starting position would you like (enter a FEN string)? Put START for default.\n--> ";
+    std::cin >> input;
     if (input == "START")
         input = START_FEN;
     e.b = board(input);
     system("clear");
 
-    cout << "Would you like to show what moves the engine considers at each depth (the Principal Variation at each depth). Enter y/n.\n--> ";
-    cin >> input;
+    std::cout << "Would you like to show what moves the engine considers at each depth (the Principal Variation at each depth). Enter y/n.\n--> ";
+    std::cin >> input;
     showpv = input == "y";
     system("clear");
     
-    cout << "What color would you like to play? (\"w\" or \"b\")?\n--> ";
-    cin >> input;
+    std::cout << "What color would you like to play? (\"w\" or \"b\")?\n--> ";
+    std::cin >> input;
 
     task t;
 
@@ -58,24 +55,24 @@ void terminal::runGame(){
         e.b.makeMove(e.getMove(t));
     while (running){
         system("clear");
-        cout << message(showpv);
-        setPos(5,17);
-        cin >> input;
+        std::cout << message(showpv);
+        gotoInputPos();
+        std::cin >> input;
         m = shortFromAlgebraic(input, &e.b);
         e.b.makeMove(m);
-        running = input == "stop" ? false : true;
+        running = !(input == "stop");
         e.b.makeMove(e.getMove(t));
     }
 }
 
 // ses ANSI escape sequences
-inline void terminal::setPos(int32_t x, int32_t y){
-    string s = ("\33[" + to_string(y) + ";" + to_string(x) + "H");
-    cout << s;
+inline void terminal::gotoInputPos(){
+    std::string s = ("\33[" + std::to_string(17) + ";" + std::to_string(5) + "H");
+    std::cout << s;
 }
 
-string terminal::message(bool showpv){
-    string s = "";
+std::string terminal::message(bool showpv){
+    std::string s;
     s += "-------- BOARD --------\n\n" + e.b.toString() + "\n-------- MOVE HISTORY --------\n    ";
     for (int32_t i = 1; i <= e.b.gameLen; i++)
         s += algebraicFromShort(e.b.gameHist[i]) + " ";
@@ -87,7 +84,7 @@ string terminal::message(bool showpv){
     return s;
 }
 
-uint16_t terminal::shortFromAlgebraic(string a, board* b){
+uint16_t terminal::shortFromAlgebraic(std::string a, board* b){
     if (a == "stop")
         return 0;
 
@@ -121,21 +118,21 @@ uint16_t terminal::shortFromAlgebraic(string a, board* b){
     return getShort(sq1,sq2,prom,spec);
 }
 
-string terminal::algebraicFromShort(uint16_t m){
+std::string terminal::algebraicFromShort(uint16_t m){
     int32_t sq1 = square1(m), sq2 = square2(m), prom = promotion(m), spec = special(m);
-    string s = {char(col(sq1)+int32_t('a')), char(row(sq1)+int32_t('1')), char(col(sq2)+int32_t('a')), char(row(sq2)+int32_t('1'))};
+    std::string s = {char(col(sq1)+int32_t('a')), char(row(sq1)+int32_t('1')), char(col(sq2)+int32_t('a')), char(row(sq2)+int32_t('1'))};
     if (spec == PROMOTE)
         s += int2Letter[prom+7];
     return s;
 }
 
-string terminal::printpvs(){
-    string s = "";
+std::string terminal::printpvs(){
+    std::string s;
     for (int32_t i = 1; i < e.pv.size(); i++){
         s += "    ";
         for (int32_t j = 0; j < e.pv[i].size(); j++)
-            s += algebraicFromShort(e.pv[i][j]) + "(" + to_string(e.pv[i][j]) + (j != e.pv[i].size()-1 ? "), " : ") : ");
-        s += to_string(e.pveval[i]);
+            s += algebraicFromShort(e.pv[i][j]) + "(" + std::to_string(e.pv[i][j]) + (j != e.pv[i].size()-1 ? "), " : ") : ");
+        s += std::to_string(e.pveval[i]);
         s += '\n';
     }
     return s;
