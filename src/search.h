@@ -53,6 +53,10 @@ public:
     bool checkOver(), isDbgLine();
     void printInfo();
     engine()= default;
+
+    inline bool isNullWindow(int32_t alpha, int32_t beta){
+        return std::abs(alpha-beta) == 1;
+    }
 };
 
 class scoredMoveList : moveList {

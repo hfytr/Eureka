@@ -190,7 +190,13 @@ int32_t engine::negamax(uint8_t depth, int32_t alpha, int32_t beta, std::vector<
     nodes++;
 
     TTnode entry = tt.get(b.zobrist);
-    if (entry.m != 0 && entry.depth >= depth && (entry.type == PV_NODE || (entry.type == FAIL_HIGH && entry.eval >= beta) || (entry.type == FAIL_LOW && entry.eval <= alpha)))
+    if (isNullWindow(alpha, beta) &&
+        entry.m != 0 &&
+        entry.depth >= depth && (
+            entry.type == PV_NODE ||
+            (entry.type == FAIL_HIGH && entry.eval >= beta) ||
+            (entry.type == FAIL_LOW && entry.eval <= alpha))
+    )
         return entry.eval;
 
     if (depth == 0)
@@ -212,8 +218,15 @@ int32_t engine::negamax(uint8_t depth, int32_t alpha, int32_t beta, std::vector<
             continue;
         }
         childpv.clear();
-        bool searchingpv = fullDepth-depth < pv.back().size() && ispv && m == pv.back()[fullDepth-depth];
-        int32_t cur = -negamax(depth-1, -beta, -alpha, childpv, searchingpv);
+        bool nextIspv = fullDepth-depth < pv.back().size() && ispv && m == pv.back()[fullDepth-depth];
+        int32_t cur;
+        if (gameOver)
+            cur = -negamax(depth-1, -beta, -alpha, childpv, nextIspv);
+        else{
+            cur =  -negamax(depth-1, -alpha-1, -alpha, childpv, nextIspv);
+            if (cur > alpha && cur < beta)
+                cur = -negamax(depth-1, -beta, -alpha, childpv, nextIspv);
+        }
         b.unmakeMove();
 
         if (cur >= beta){
