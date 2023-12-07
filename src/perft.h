@@ -1,4 +1,4 @@
-#include <std::string>
+#include <string>
 #include <chrono>
 #include <iostream>
 #include "board.h"
