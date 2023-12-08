@@ -54,7 +54,7 @@ public:
     void printInfo();
     engine()= default;
 
-    inline bool isNullWindow(int32_t alpha, int32_t beta){
+    inline bool isNullWindow(int64_t alpha, int64_t beta){
         return std::abs(alpha-beta) == 1;
     }
 };
