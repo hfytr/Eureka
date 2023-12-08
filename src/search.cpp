@@ -301,7 +301,15 @@ xMove engine::search(uint8_t depth, int32_t alpha, int32_t beta){
         }
 
         childpv.clear();
-        int32_t cur = -negamax(depth-1, MIN32, -best.eval, childpv, pv.back().size() > fullDepth-depth && m == pv.back()[fullDepth-depth]);
+        bool nextIspv = fullDepth-depth < pv.back().size() && m == pv.back()[fullDepth-depth];
+        int32_t cur;
+        if (gameOver)
+            cur = -negamax(depth-1, -beta, -alpha, childpv, nextIspv);
+        else{
+            cur =  -negamax(depth-1, -alpha-1, -alpha, childpv, nextIspv);
+            if (cur > alpha && cur < beta)
+                cur = -negamax(depth-1, -beta, -alpha, childpv, nextIspv);
+        }
         b.unmakeMove();
 
         if (cur > best.eval || gameOver){
