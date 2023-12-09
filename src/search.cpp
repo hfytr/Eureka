@@ -10,14 +10,12 @@
 
 void engine::printInfo(){
     auto passed = steady_clock::now()-start;
-    if (!debug && duration_cast<std::chrono::milliseconds>(passed).count() < std::min(500,t.length/2)) // reduce verbosity
-        return;
-    std::cout << "info depth " << fullDepth << " nodes " << nodes << " time " << duration_cast<milliseconds>(passed).count() << " nps " << nodes/(duration_cast<seconds>(passed).count()+1) << " score cp " << pveval.back() << std::endl;
+    std::cout << "info depth " << fullDepth << " nodes " << nodes << " time " << duration_cast<milliseconds>(passed).count() << " nps " << 1000 * nodes/(duration_cast<milliseconds>(passed).count()+1) << " score cp " << eval << std::endl;
     std::cout << "info pv";
-    for (int32_t i = 0; i < pv.back().size(); i++){
-        if (pv.back()[i] == 0)
+    for (int32_t i = 0; i < lastpv.size(); i++){
+        if (lastpv[i] == 0)
             break;
-        std::cout << ' ' << algebraicFromShort(pv.back()[i]);
+        std::cout << ' ' << algebraicFromShort(lastpv[i]);
     }
     std::cout << std::endl;
 }
@@ -84,18 +82,18 @@ bool engine::checkOver(){
 /// @brief checks whether current board is line to debug
 /// @return bool - true if is debug line else false
 bool engine::isDbgLine(){
-    std::vector<std::string> dbgLine = {"b4d2","f2g2"};
+    std::vector<std::string> dbgLine = {"e2e4", "d7d5", "e4d5", "g8f6", "c2c4", "c7c6", "d5c6"};
     int32_t i;
     for (i = 0; i < dbgLine.size(); i++)
         if (i == b.gameLen || dbgLine[i] != algebraicFromShort(b.gameHist[i+1]))
             break;
-    if (i == b.gameLen && fullDepth == 3)
+    if (i == b.gameLen)
         return true;
     return false;
 }
 
-scoredMoveList::scoredMoveList(uint8_t depth_, bool ispv_, std::pair<uint16_t, uint16_t> killers_, engine *e_, moveList list){
-    depth=depth_;ispv=ispv_;killers=killers_;e=e_;
+scoredMoveList::scoredMoveList(uint8_t depth_, std::pair<uint16_t, uint16_t> killers_, engine *e_, moveList list){
+    depth=depth_;killers=killers_;e=e_;
     for (int32_t j = 0; j < list.len(); j++){
         container[j] = list[j];
         scores[j] = scoreMove(container[j]);
@@ -104,11 +102,8 @@ scoredMoveList::scoredMoveList(uint8_t depth_, bool ispv_, std::pair<uint16_t, u
 }
 
 int32_t scoredMoveList::scoreMove(uint16_t m){
-    if (ispv && e->fullDepth-depth < e->pv.back().size() && m == e->pv.back()[e->fullDepth-depth])
-        return MAX32;
-
     if (e->tt.get(e->b.zobrist).m == m)
-        return MAX32-1;
+        return MAX32;
 
     bool capture = e->b.sqs[square2(m)] != 0;
 
@@ -140,7 +135,7 @@ int32_t engine::quiesce(int32_t alpha, int32_t beta){
     if (entry.m != 0 && (entry.type == PV_NODE || (entry.type == FAIL_HIGH && entry.eval >= beta) || (entry.type == FAIL_LOW && entry.eval <= alpha)))
         return entry.eval;
 
-    scoredMoveList moves = scoredMoveList(0, false, {0,0}, this, b.genMoves(false,true));
+    scoredMoveList moves = scoredMoveList(0, {0,0}, this, b.genMoves(false,true));
 
     xMove best;
     bool illegal;
@@ -185,7 +180,7 @@ int32_t engine::quiesce(int32_t alpha, int32_t beta){
     return best.eval;
 }
 
-int32_t engine::negamax(uint8_t depth, int32_t alpha, int32_t beta, std::vector<uint16_t> &parentpv, bool ispv){
+int32_t engine::negamax(uint8_t depth, int32_t alpha, int32_t beta){
     over = checkOver();
     nodes++;
 
@@ -196,18 +191,19 @@ int32_t engine::negamax(uint8_t depth, int32_t alpha, int32_t beta, std::vector<
             entry.type == PV_NODE ||
             (entry.type == FAIL_HIGH && entry.eval >= beta) ||
             (entry.type == FAIL_LOW && entry.eval <= alpha))
-    )
+    ){
+        if (depth != 0)
+            pv[depth][0] = NULLMOVE;
         return entry.eval;
+    }
+    xMove best;
+    bool illegal, gameOver = true;
+    uint8_t nodeType = FAIL_LOW;
 
     if (depth == 0)
         return quiesce(alpha,beta);
 
-    scoredMoveList moves = scoredMoveList(0, ispv, {0,0}, this, b.genMoves(false,false));
-
-    xMove best;
-    std::vector<uint16_t> childpv;
-    bool illegal, gameOver = true;
-    uint8_t nodeType = FAIL_LOW;
+    scoredMoveList moves = scoredMoveList(0, killers[depth-1], this, b.genMoves(false,false));
 
     for (int32_t i = 0; i < moves.len(); i++){
         uint16_t m = moves.get();
@@ -217,42 +213,41 @@ int32_t engine::negamax(uint8_t depth, int32_t alpha, int32_t beta, std::vector<
             b.unmakeMove();
             continue;
         }
-        childpv.clear();
-        bool nextIspv = fullDepth-depth < pv.back().size() && ispv && m == pv.back()[fullDepth-depth];
         int32_t cur;
         if (gameOver)
-            cur = -negamax(depth-1, -beta, -alpha, childpv, nextIspv);
+            cur = -negamax(depth-1, -beta, -alpha);
         else{
-            cur =  -negamax(depth-1, -alpha-1, -alpha, childpv, nextIspv);
+            cur =  -negamax(depth-1, -alpha, -alpha+1);
             if (cur > alpha && cur < beta)
-                cur = -negamax(depth-1, -beta, -alpha, childpv, nextIspv);
+                cur = -negamax(depth-1, -beta, -alpha);
         }
         b.unmakeMove();
-
-        if (cur >= beta){
-            if (b.sqs[square2(m)] == 0){
-                killers[fullDepth-depth].second = killers[fullDepth-depth].first;
-                killers[fullDepth-depth].first = m;
-                butterfly[b.player][square1(m)][square2(m)] += depth*depth;
-            }
-            nodeType = FAIL_HIGH;
-            tt.push(TTnode(b.zobrist, best.eval, best.m, depth, nodeType));
-            if (depth > 2)
-                killers[fullDepth - depth + 2] = std::pair<uint16_t,uint16_t> (0,0);
-            return cur;
-        }
 
         if (cur > best.eval || gameOver){
             best = {cur, m};
             if (cur > alpha){
                 nodeType = PV_NODE;
                 alpha = cur;
-                parentpv.clear();
-                parentpv.resize(childpv.size()+1);
-                parentpv[0] = m;
-                for (int32_t j = 0; j < childpv.size(); j++)
-                    parentpv[j+1] = childpv[j];
+                pv[depth-1][0] = m;
+                for (int32_t j = 0; j < depth-1; j++) {
+                    pv[depth-1][j+1] = pv[depth-2][j];
+                    if (pv[depth-1][j+1] == NULLMOVE)
+                        break;
+                }
             }
+        }
+
+        if (cur >= beta){
+            if (b.sqs[square2(m)] == 0){
+                killers[depth-1].second = killers[depth-1].first;
+                killers[depth-1].first = m;
+                butterfly[b.player][square1(m)][square2(m)] += depth*depth;
+            }
+            nodeType = FAIL_HIGH;
+            tt.push(TTnode(b.zobrist, best.eval, best.m, depth, nodeType));
+            if (depth > 2)
+                killers[depth-3] = std::pair<uint16_t,uint16_t> (0,0);
+            return cur;
         }
 
         if (cur == CHECKMATE)
@@ -272,7 +267,7 @@ int32_t engine::negamax(uint8_t depth, int32_t alpha, int32_t beta, std::vector<
 
     tt.push(TTnode(b.zobrist, best.eval, best.m, depth, nodeType));
     if (depth > 2)
-        killers[fullDepth - depth + 2] = std::pair<uint16_t,uint16_t> (0,0);
+        killers[fullDepth - depth + 2] = std::pair<uint16_t,uint16_t> (NULLMOVE,NULLMOVE);
     return best.eval;
 }
 
@@ -280,16 +275,11 @@ int32_t engine::negamax(uint8_t depth, int32_t alpha, int32_t beta, std::vector<
 /// @param depth depth at which to search
 /// @return best move for given depth
 xMove engine::search(uint8_t depth, int32_t alpha, int32_t beta){
-    killers.resize(depth);
-    killers.resize(depth);
     nodes++;
     xMove best = {MIN32,0};
-    std::vector<uint16_t> childpv;
-    std::vector<uint16_t> nextpv;
-    nextpv.resize(depth);
     bool gameOver = true;
 
-    scoredMoveList moves {depth, true, {}, this, t.moves};
+    scoredMoveList moves {depth, {}, this, t.moves};
 
     for (int32_t i = 0; i < moves.len(); i++){
         uint16_t m = moves.get();
@@ -300,15 +290,14 @@ xMove engine::search(uint8_t depth, int32_t alpha, int32_t beta){
             continue;
         }
 
-        childpv.clear();
-        bool nextIspv = fullDepth-depth < pv.back().size() && m == pv.back()[fullDepth-depth];
+        bool nextIspv = depth != 1 && m == lastpv[0];
         int32_t cur;
         if (gameOver)
-            cur = -negamax(depth-1, -beta, -alpha, childpv, nextIspv);
+            cur = -negamax(depth-1, -beta, -alpha);
         else{
-            cur =  -negamax(depth-1, -alpha-1, -alpha, childpv, nextIspv);
+            cur =  -negamax(depth-1, -alpha-1, -alpha);
             if (cur > alpha && cur < beta)
-                cur = -negamax(depth-1, -beta, -alpha, childpv, nextIspv);
+                cur = -negamax(depth-1, -beta, -alpha);
         }
         b.unmakeMove();
 
@@ -317,15 +306,18 @@ xMove engine::search(uint8_t depth, int32_t alpha, int32_t beta){
             if (cur > alpha){
                 alpha = cur;
                 rootType = PV_NODE;
-                nextpv[0] = m;
-                for (int32_t j = 0; j < childpv.size(); j++)
-                    nextpv[j+1] = childpv[j];
+                pv[depth-1][0] = m;
+                for (int32_t j = 0; j < depth-1; j++) {
+                    pv[depth-1][j+1] = pv[depth-2][j];
+                    if (pv[depth-1][j+1] == NULLMOVE)
+                        break;
+                }
             }
         }
 
         if (cur >= beta){
             rootType = FAIL_HIGH;
-            tt.push(TTnode(b.zobrist, cur, m, depth, FAIL_HIGH));
+            tt.push(TTnode(b.zobrist, cur, m, depth, rootType));
             return {cur,m};
         }
 
@@ -335,17 +327,15 @@ xMove engine::search(uint8_t depth, int32_t alpha, int32_t beta){
         gameOver = false;
 
         if (debug)
-            std::cout << "info currmove " << algebraicFromShort(m) << " currmovenumber " << i+1 << " score cp " << cur << std::endl << std::endl;
+            std::cout << "info currmove " << algebraicFromShort(m) << " currmovenumber " << i+1 << " score cp " << cur << std::endl;
 
         if (over)
-            return {pveval.back(), pv.back()[0]};
+            return best;
     }
     
     tt.push(TTnode(b.zobrist, best.eval, best.m, depth, rootType));
-    if (rootType == PV_NODE){
-        pv.push_back(nextpv);
-        pveval.push_back(best.eval);
-    }
+    if (rootType == PV_NODE)
+        lastpv = pv[depth-1];
     return best;
 }
 
@@ -363,25 +353,28 @@ uint16_t engine::getMove(task t_){
         t.moves = b.genMoves(false, false);
 
     nodes = 0;
+    fullDepth = 1;
     start = steady_clock::now();
     pv.clear();
-    pveval.clear();
-    pv.emplace_back(t.moves[0]);
-    pveval.push_back(0);
+    pv.emplace_back(1, 0);
     over = false;
     int32_t alphaOffset = 40, betaOffset = 40;
 
     xMove best = search(1,MIN32,MAX32), cur;
     fullDepth = 2;
+    pv.emplace_back(fullDepth, 0);
     
     while (!over){
         rootType = FAIL_LOW;
+        killers = {fullDepth, {NULLMOVE, NULLMOVE}};
         cur = search(fullDepth, best.eval - alphaOffset, best.eval + betaOffset);
         switch(rootType){
-            case PV_NODE:{ 
-                fullDepth++;
+            case PV_NODE:{
                 printInfo();
-                if (pveval.back() == CHECKMATE || pveval.back() == CHECKMATED)
+                fullDepth++;
+                pv.emplace_back(fullDepth,0);
+                cur = best.eval;
+                if (cur.eval == CHECKMATE || cur.eval == CHECKMATED)
                     return best.m;
                 over = checkOver();
                 break;

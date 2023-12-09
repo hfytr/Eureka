@@ -41,12 +41,6 @@ void terminal::runGame(){
     e.b = board(input);
     system("clear");
 
-    std::cout << "Would you like to show what moves the engine considers at each depth (the Principal Variation at each depth). Enter y/n.\n--> ";
-    std::cin >> input;
-    showpv = input == "y";
-    system("clear");
-    
-    std::cout << "What color would you like to play? (\"w\" or \"b\")?\n--> ";
     std::cin >> input;
 
     task t;
@@ -77,10 +71,6 @@ std::string terminal::message(bool showpv){
     for (int32_t i = 1; i <= e.b.gameLen; i++)
         s += algebraicFromShort(e.b.gameHist[i]) + " ";
     s += "\n\n-------- INPUT NEXT MOVE (put \"stop\" to stop)--------\n--> \n\n";
-    if (showpv){
-        s += "-------- PRINCIPAL VARIATION --------\n";
-        s += printpvs();
-    }
     return s;
 }
 
@@ -124,16 +114,3 @@ std::string terminal::algebraicFromShort(uint16_t m){
     if (spec == PROMOTE)
         s += int2Letter[prom+7];
     return s;
-}
-
-std::string terminal::printpvs(){
-    std::string s;
-    for (int32_t i = 1; i < e.pv.size(); i++){
-        s += "    ";
-        for (int32_t j = 0; j < e.pv[i].size(); j++)
-            s += algebraicFromShort(e.pv[i][j]) + "(" + std::to_string(e.pv[i][j]) + (j != e.pv[i].size()-1 ? "), " : ") : ");
-        s += std::to_string(e.pveval[i]);
-        s += '\n';
-    }
-    return s;
-}

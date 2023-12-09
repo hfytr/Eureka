@@ -36,17 +36,17 @@ public:
     int64_t nodes{};
     task t;
     std::vector<std::vector<uint16_t>> pv;
-    std::vector<int32_t> pveval;
+    std::vector<uint16_t> lastpv;
     std::vector<std::pair<uint16_t,uint16_t>> killers;
     time_point<steady_clock> start;
-    int32_t fullDepth = 0;
+    int32_t fullDepth = 1, eval;
     TT tt = TT(DEFAULTTTSIZE);
     int32_t butterfly[2][64][64] = {};
     bool over{}, debug = false, forceStop = false;
     uint8_t rootType = PV_NODE;
 
     int32_t see(uint16_t m = 0, int32_t sq = -1);
-    int32_t negamax(uint8_t depth, int32_t alpha, int32_t beta, std::vector<uint16_t> &parentpv, bool ispv), quiesce(int32_t alpha, int32_t beta);
+    int32_t negamax(uint8_t depth, int32_t alpha, int32_t beta), quiesce(int32_t alpha, int32_t beta);
     int32_t initialTime();
     xMove search(uint8_t depth, int32_t alpha, int32_t beta);
     uint16_t getMove(task t);
@@ -61,7 +61,7 @@ public:
 
 class scoredMoveList : moveList {
 public:
-    scoredMoveList(uint8_t depth_, bool ispv_, std::pair<uint16_t,uint16_t> killers_, engine* e_, moveList list);
+    scoredMoveList(uint8_t depth_, std::pair<uint16_t,uint16_t> killers_, engine* e_, moveList list);
     uint16_t get();
     uint16_t len(){ return length; }
 private:

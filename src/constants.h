@@ -19,6 +19,7 @@
 #define CHECKMATE (MAX32-1)
 #define CHECKMATED (MIN32+1)
 #define NUM_BUCKETS 4
+#define NULLMOVE 0
 
 extern int32_t DeBruijnLookup[64];
 extern int32_t rookShift[64];
