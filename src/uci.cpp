@@ -22,10 +22,12 @@ void uci::takeInput(){
     const std::map<std::string,int32_t> gotoken {{"searchmoves",0},{"ponder",-2},{"wtime",2},{"btime",3},{"winc",4},{"binc",5},{"movestogo",6},{"depth",7},{"nodes",8},{"movetime",9},{"infinite",-1}};
     std::vector<std::string> cur;
     while (true){
+        if (e.b.fen() == "8/8/8/8/5k2/6p1/4B1K1/8 b - - 111 55")
+            std::cout << e.b.toString() << e.b.printBB();
         cur = readCommand();
         switch(cmdnum.at(cur[0])){
             case 0:{ // uci
-                std::cout << "id name Eureka 1.0\nid author Archim Jhunjhunwala\noption name Hash type spin default 1 std::min 1\nuciok" << std::endl;
+                std::cout << "id name Eureka New\nid author Archim Jhunjhunwala\noption name Hash type spin default 1 min 1\nuciok" << std::endl;
                 break;
             }
             case 1:{ // debug

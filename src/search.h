@@ -39,7 +39,8 @@ public:
     std::vector<uint16_t> lastpv;
     std::vector<std::pair<uint16_t,uint16_t>> killers;
     time_point<steady_clock> start;
-    int32_t fullDepth = 1, eval;
+    uint32_t fullDepth = 1;
+    int32_t eval;
     TT tt = TT(DEFAULTTTSIZE);
     int32_t butterfly[2][64][64] = {};
     bool over{}, debug = false, forceStop = false;

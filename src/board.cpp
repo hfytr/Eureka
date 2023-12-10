@@ -404,6 +404,15 @@ std::string board::printBB(){
 
 // updates board given move
 bool board::makeMove(uint16_t m){
+    if (m == NULLMOVE){
+        gameLen++;
+        gameHist[gameLen] = m;
+        zobrist ^= zrn[ZPLAYER];
+        bits.flip(ZPLAYER);
+        bool tr = attacked() || fiftyCount == 100;
+        player = opp(player);
+        return tr;
+    }
     int32_t sq1 = square1(m), sq2 = square2(m), prom = promotion(m), spec = special(m);
     int32_t fromPiece = sqs[sq1],  toPiece = sqs[sq2];
     toggle(bitbs[pCol(fromPiece)][pType(fromPiece)],sq1);
@@ -528,6 +537,13 @@ bool board::makeMove(uint16_t m){
 // undoes last move
 void board::unmakeMove(){
     uint16_t m = gameHist[gameLen];
+    if (m == NULLMOVE){
+        player = opp(player);
+        gameLen--;
+        zobrist ^= zrn[ZPLAYER];
+        bits.flip(ZPLAYER);
+        return; 
+    }
     int32_t sq1 = square1(m), sq2 = square2(m), prom = promotion(m), spec = special(m), capt = captured[gameLen];
     player = opp(player);
     zobrist ^= zrn[ZPLAYER];
@@ -643,6 +659,8 @@ uint64_t board::queenAttacks(int32_t sq, bool removeSame = true, int32_t p, uint
 
 uint64_t board::kingAttacks(int32_t sq, bool removeSame = true, int32_t p){
     p = p == -1 ? player : p;
+    if (sq == -1)
+        std::cout << toString() << printBB();
     uint64_t tr = kingMasks[sq];
     remove(tr, bitbs[p][0]*removeSame);
     if (quiesce)

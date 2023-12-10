@@ -196,10 +196,23 @@ int32_t engine::negamax(uint8_t depth, int32_t alpha, int32_t beta){
             pv[depth][0] = NULLMOVE;
         return entry.eval;
     }
+    
     xMove best;
     bool illegal, gameOver = true;
     uint8_t nodeType = FAIL_LOW;
 
+    int32_t curEval = b.eval();
+    if (curEval >= beta){
+        if (depth == 0)
+            return curEval;
+        int32_t nullEval = MIN32;
+        if (!b.makeMove(NULLMOVE))
+            nullEval = -negamax(depth-1, -beta, -beta+1);
+        b.unmakeMove();
+        if (nullEval >= beta)
+            return nullEval;
+    }
+    
     if (depth == 0)
         return quiesce(alpha,beta);
 
@@ -278,6 +291,15 @@ xMove engine::search(uint8_t depth, int32_t alpha, int32_t beta){
     nodes++;
     xMove best = {MIN32,0};
     bool gameOver = true;
+    
+    if (b.eval() >= beta){
+        int32_t nullEval = MIN32;
+        if (!b.makeMove(NULLMOVE))
+            nullEval = -negamax(depth-1, -beta, -beta+1);
+        b.unmakeMove();
+        if (nullEval >= beta)
+            return nullEval;
+    }
 
     scoredMoveList moves {depth, {}, this, t.moves};
 
@@ -290,7 +312,6 @@ xMove engine::search(uint8_t depth, int32_t alpha, int32_t beta){
             continue;
         }
 
-        bool nextIspv = depth != 1 && m == lastpv[0];
         int32_t cur;
         if (gameOver)
             cur = -negamax(depth-1, -beta, -alpha);
@@ -359,6 +380,7 @@ uint16_t engine::getMove(task t_){
     pv.emplace_back(1, 0);
     over = false;
     int32_t alphaOffset = 40, betaOffset = 40;
+    killers = {1,{NULLMOVE,NULLMOVE}};
 
     xMove best = search(1,MIN32,MAX32), cur;
     fullDepth = 2;
@@ -373,9 +395,7 @@ uint16_t engine::getMove(task t_){
                 printInfo();
                 fullDepth++;
                 pv.emplace_back(fullDepth,0);
-                cur = best.eval;
-                if (cur.eval == CHECKMATE || cur.eval == CHECKMATED)
-                    return best.m;
+                best = cur;
                 over = checkOver();
                 break;
             }
@@ -390,6 +410,14 @@ uint16_t engine::getMove(task t_){
                 break;
             }
         }
+        if (cur.eval == CHECKMATE || cur.eval == CHECKMATED)
+            return best.m;
+
     }
     return best.m;
 }
+/*
+position startpos moves e2e4 g8f6 e4e5 f6d5 c2c4 d5b4 a2a3 b8c6 a3b4
+go wtime 247011 btime 269999 movestogo 36
+
+ */
