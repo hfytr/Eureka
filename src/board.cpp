@@ -659,8 +659,6 @@ uint64_t board::queenAttacks(int32_t sq, bool removeSame = true, int32_t p, uint
 
 uint64_t board::kingAttacks(int32_t sq, bool removeSame = true, int32_t p){
     p = p == -1 ? player : p;
-    if (sq == -1)
-        std::cout << toString() << printBB();
     uint64_t tr = kingMasks[sq];
     remove(tr, bitbs[p][0]*removeSame);
     if (quiesce)

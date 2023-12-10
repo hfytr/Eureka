@@ -27,7 +27,7 @@ void uci::takeInput(){
         cur = readCommand();
         switch(cmdnum.at(cur[0])){
             case 0:{ // uci
-                std::cout << "id name Eureka New\nid author Archim Jhunjhunwala\noption name Hash type spin default 1 min 1\nuciok" << std::endl;
+                std::cout << "id name Eureka\nid author Archim Jhunjhunwala\noption name Hash type spin default 1 min 1\nuciok" << std::endl;
                 break;
             }
             case 1:{ // debug
