@@ -198,8 +198,8 @@ int32_t engine::negamax(uint8_t depth, int32_t alpha, int32_t beta){
     }
     
     xMove best;
-    bool illegal, gameOver = true;
-    uint8_t nodeType = FAIL_LOW;
+    bool illegal, gameOver = true, inCheck = b.attacked();
+    uint8_t nodeType = FAIL_LOW, movesSearched = 0;
 
     int32_t curEval = b.eval();
     if (curEval >= beta){
@@ -226,13 +226,15 @@ int32_t engine::negamax(uint8_t depth, int32_t alpha, int32_t beta){
             b.unmakeMove();
             continue;
         }
+        movesSearched++;
         int32_t cur;
         if (gameOver)
             cur = -negamax(depth-1, -beta, -alpha);
         else{
+            uint8_t reduction = movesSearched >= REDUCE_AFTER && b.sqs[square2(m)] == 0 && depth >= 3 && !inCheck;
             cur =  -negamax(depth-1, -alpha, -alpha+1);
             if (cur > alpha && cur < beta)
-                cur = -negamax(depth-1, -beta, -alpha);
+                cur = -negamax(depth-1-reduction, -beta, -alpha);
         }
         b.unmakeMove();
 
@@ -290,7 +292,8 @@ int32_t engine::negamax(uint8_t depth, int32_t alpha, int32_t beta){
 xMove engine::search(uint8_t depth, int32_t alpha, int32_t beta){
     nodes++;
     xMove best = {MIN32,0};
-    bool gameOver = true;
+    bool gameOver = true, inCheck = b.attacked();
+    uint8_t movesSearched = 0;
     
     if (b.eval() >= beta){
         int32_t nullEval = MIN32;
@@ -311,12 +314,13 @@ xMove engine::search(uint8_t depth, int32_t alpha, int32_t beta){
             b.unmakeMove();
             continue;
         }
-
+        movesSearched++;
         int32_t cur;
         if (gameOver)
             cur = -negamax(depth-1, -beta, -alpha);
         else{
-            cur =  -negamax(depth-1, -alpha-1, -alpha);
+            uint8_t reduction = movesSearched >= REDUCE_AFTER && b.sqs[square2(m)] == 0 && depth >= 3 && !inCheck;
+            cur =  -negamax(depth-1-reduction, -alpha-1, -alpha);
             if (cur > alpha && cur < beta)
                 cur = -negamax(depth-1, -beta, -alpha);
         }
