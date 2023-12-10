@@ -35,12 +35,14 @@ int32_t engine::initialTime(){
 /// @return cp score DIFFERENCE after trades are finished
 int32_t engine::see(uint16_t m, int32_t sq){
     int32_t attacker, victim = sq, player = b.player;
-    uint64_t traded = 1ULL << sq;
     if (sq == -1){
         sq = square2(m);
         victim = sq;
         attacker = square1(m);
     }
+    uint64_t traded = 1ULL << sq;
+    if (b.sqs[sq] == 0)
+        return 0;
     if (m == 0)
         attacker = b.lva(sq, traded, player);
     std::vector<int32_t> result, victimVal;
@@ -54,7 +56,7 @@ int32_t engine::see(uint16_t m, int32_t sq){
         }
         attacker = b.lva(sq,traded,player);
         if (attacker != -1)
-            traded ^= 1ULL << attacker;
+            toggle(traded, attacker);
     }
     result.resize(victimVal.size());
     result.push_back(0);
@@ -95,25 +97,32 @@ bool engine::isDbgLine(){
 scoredMoveList::scoredMoveList(uint8_t depth_, std::pair<uint16_t, uint16_t> killers_, engine *e_, moveList list){
     depth=depth_;killers=killers_;e=e_;
     for (int32_t j = 0; j < list.len(); j++){
-        container[j] = list[j];
-        scores[j] = scoreMove(container[j]);
-        length++;
+        see[length] = e->see(list[j]);
+        if (see[length] >= SEE_CUTOFF * depth){
+            container[length] = list[j];
+            scores[length] = scoreMove();
+            length++;
+        }
     }
 }
 
-int32_t scoredMoveList::scoreMove(uint16_t m){
-    if (e->tt.get(e->b.zobrist).m == m)
+int32_t scoredMoveList::scoreMove(){
+    if (e->tt.get(e->b.zobrist).m == container[length])
         return MAX32;
 
-    bool capture = e->b.sqs[square2(m)] != 0;
+    bool capture = e->b.sqs[square2(container[length])] != 0;
 
-    if (capture)
-        return 1000*e->b.val(square2(m), true) + 1000 - e->b.val(square1(m), true) + MINMVVLVA;
+    if (capture) {
+        int32_t mvvlva = 1000 * e->b.val(square2(container[length]), true) + 1000 - e->b.val(square1(container[length]), true);
+        if (see[length] >= 0)
+            return mvvlva + GOOD_CAPTURE;
+        return mvvlva + MIN32;
+    }
 
-    if (killers.first == m || killers.second == m)
-        return MINMVVLVA-1;
+    if (killers.first == container[length] || killers.second == container[length])
+        return GOOD_CAPTURE-1;
 
-    return std::min(e->butterfly[e->b.player][square1(m)][square2(m)],MINMVVLVA-2);
+    return std::min(e->butterfly[e->b.player][square1(container[length])][square2(container[length])],GOOD_CAPTURE-2);
 }
 
 uint16_t scoredMoveList::get(){
@@ -216,7 +225,7 @@ int32_t engine::negamax(uint8_t depth, int32_t alpha, int32_t beta){
     if (depth == 0)
         return quiesce(alpha,beta);
 
-    scoredMoveList moves = scoredMoveList(0, killers[depth-1], this, b.genMoves(false,false));
+    scoredMoveList moves = scoredMoveList(depth, killers[depth-1], this, b.genMoves(false,false));
 
     for (int32_t i = 0; i < moves.len(); i++){
         uint16_t m = moves.get();

@@ -8,11 +8,10 @@
 #define ZCASTLE 769
 #define ZEP 773
 #define DEFAULTTTSIZE 1
-#define AGETOLERANCE 5
 #define START_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 #define MIN32 (INT_MIN+1)
 #define MAX32 (INT_MAX)
-#define MINMVVLVA (MAX32 - 2000000)
+#define GOOD_CAPTURE (MAX32 - 2000000)
 #define FAIL_HIGH 0
 #define FAIL_LOW 1
 #define PV_NODE 2
@@ -21,6 +20,7 @@
 #define NUM_BUCKETS 4
 #define NULLMOVE 0
 #define REDUCE_AFTER 4
+#define SEE_CUTOFF (-100)
 
 extern int32_t DeBruijnLookup[64];
 extern int32_t rookShift[64];

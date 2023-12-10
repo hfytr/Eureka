@@ -66,12 +66,12 @@ public:
     uint16_t get();
     uint16_t len(){ return length; }
 private:
-    int32_t scores[256], i = 0;
+    int32_t scores[256], see[256], i = 0;
     uint8_t depth;
     bool ispv;
     std::pair<uint16_t, uint16_t> killers;
     engine* e;
-    int32_t scoreMove(uint16_t m);
+    int32_t scoreMove();
 };
 
 #endif
