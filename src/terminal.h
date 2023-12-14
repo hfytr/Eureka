@@ -12,8 +12,8 @@ public:
 
 private:
     engine e;
-    void runGame(), runPerft();
+    void runGame();
     inline void gotoInputPos();
-    std::string message(bool showpv), printpvs();
+    std::string message(bool showpv);
 };
 #endif

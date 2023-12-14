@@ -40,7 +40,7 @@ public:
     std::vector<std::pair<uint16_t,uint16_t>> killers;
     time_point<steady_clock> start;
     uint32_t fullDepth = 1;
-    int32_t eval;
+    int32_t eval, moveOverhead = 20;
     TT tt = TT(DEFAULTTTSIZE);
     int32_t butterfly[2][64][64] = {};
     bool over{}, debug = false, forceStop = false;

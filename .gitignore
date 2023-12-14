@@ -5,3 +5,4 @@ SPRT/
 build/
 .vscode/
 Ignore/
+cmake-build-debug-event-trace/

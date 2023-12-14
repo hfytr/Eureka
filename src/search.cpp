@@ -26,7 +26,7 @@ int32_t engine::initialTime(){
         optimalTime = t.increment[b.player]/2 + t.timeLeft[b.player]/t.movestogo;
     else
         optimalTime = t.increment[b.player]/2 + t.timeLeft[b.player]/20;
-    return std::min(optimalTime, t.timeLeft[b.player]-20);
+    return std::min(optimalTime, t.timeLeft[b.player]-moveOverhead);
 }
 
 /// @brief returns the result of a sequence of trades on a given square, or after a given move
@@ -414,12 +414,10 @@ uint16_t engine::getMove(task t_){
             }
             case FAIL_LOW:{
                 alphaOffset *= 2;
-                best = cur;
                 break;
             }
             case FAIL_HIGH:{
                 betaOffset *= 2;
-                best = cur;
                 break;
             }
         }
@@ -429,8 +427,3 @@ uint16_t engine::getMove(task t_){
     }
     return best.m;
 }
-/*
-position startpos moves e2e4 g8f6 e4e5 f6d5 c2c4 d5b4 a2a3 b8c6 a3b4
-go wtime 247011 btime 269999 movestogo 36
-
- */
