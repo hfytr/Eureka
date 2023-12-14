@@ -414,12 +414,10 @@ uint16_t engine::getMove(task t_){
             }
             case FAIL_LOW:{
                 alphaOffset *= 2;
-                best = cur;
                 break;
             }
             case FAIL_HIGH:{
                 betaOffset *= 2;
-                best = cur;
                 break;
             }
         }

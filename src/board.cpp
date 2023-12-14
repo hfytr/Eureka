@@ -575,7 +575,8 @@ void board::unmakeMove(){
     sqs[sq2] = capt;
     
     int32_t prevsq1 = square1(gameHist[gameLen-1]), prevsq2 = square2(gameHist[gameLen-1]);
-    if (abs(prevsq1-prevsq2) == 16 && pType(sqs[prevsq2]) == 1){
+    bool epPawnCaptured = (sq2 == prevsq2 && captured[gameLen] == 1) || spec == EP;
+    if (abs(prevsq1-prevsq2) == 16 && (pType(sqs[prevsq2]) == 1 || epPawnCaptured)){
         zobrist ^= zrn[ZEP+col(prevsq2)];
         bits.flip(ZEP+col(prevsq2));
     }
@@ -685,6 +686,8 @@ void board::pushMove(uint16_t m){
         moves.push(m);
         return;
     }
+    std::bitset<781> b1;
+    uint64_t zob = zobrist;
     if (!makeMove(m))
         moves.push(m);
     unmakeMove();
@@ -749,16 +752,15 @@ void board::genQueenMoves(){
 void board::genKingMoves(){
     int32_t i = poplsb(bitbs[player][6], false), sq;
     uint64_t attack = kingAttacks(i);
-    uint16_t m;
     while (attack)
         pushMove(getShort(i,poplsb(attack)));
-    
     if (!attacked(i)){
+        uint64_t homeRank = (bitbs[1][0] | bitbs[0][0]) >> (player*56);
         if (canCastle(player,1))
-            if (!attacked(i+1) && !attacked(i+2) && (bitbs[1][0] | bitbs[0][0]) << (1+opp(player)*56) == 0)
+            if (!attacked(i+1) && !attacked(i+2) && (homeRank & KINGSIDE) == 0)
                 pushMove(getShort(i,i+2,0,CASTLE));
         if (canCastle(player,0))
-            if (!attacked(i-1) && !attacked(i-2) && (bitbs[1][0] | bitbs[0][0]) << (4+opp(player)*56) == 0)
+            if (!attacked(i-1) && !attacked(i-2) && (homeRank & QUEENSIDE) == 0)
                 pushMove(getShort(i,i-2,0,CASTLE));
     }
 }
@@ -869,8 +871,6 @@ bool board::attacked(int32_t sq){
 // finds the value of a piece by interpolating between midgame, and endgame values (from lookup table)
 int32_t board::val(int32_t sq, bool simple){
     int32_t piece = pType(sqs[sq]), mg, eg;
-    if (piece == 0)
-        std::cout << toString() << printBB();
     if (simple){
         mg = mgval[piece-1];
         eg = egval[piece-1];

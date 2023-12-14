@@ -1,7 +1,7 @@
 #include <string>
 #include <chrono>
 #include <iostream>
-#include "board.h"
+#include "../board.h"
 
 using namespace std::chrono;
 
@@ -19,7 +19,8 @@ const std::string fen[5] = {
 
 class perft {
 public:
-    perft();
+    perft(){}
+    int32_t runPerft(int32_t i);
 
 private:
     board b;

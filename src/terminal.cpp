@@ -3,7 +3,7 @@
 #include "board.h"
 #include "constants.h"
 #include "search.h"
-#include "perft.h"
+#include "ctest/perft.h"
 #include "terminal.h"
 
 
@@ -13,19 +13,9 @@ terminal::terminal(){
         system("clear");
         std::cout << "Would you like to run perft (enter P), play a game (enter G), or stop (enter S)?\n--> ";
         std::cin >> input;
-        if (input == "P")
-            runPerft();
-        else
+        if (input == "G")
             runGame();
     }
-}
-
-void terminal::runPerft(){
-    system("clear");
-    perft p;
-    std::string _;
-    std::cout << "\nEnter anything to continue\n--> ";
-    std::cin >> _;
 }
 
 void terminal::runGame(){
@@ -108,9 +98,10 @@ uint16_t terminal::shortFromAlgebraic(std::string a, board* b){
     return getShort(sq1,sq2,prom,spec);
 }
 
-std::string terminal::algebraicFromShort(uint16_t m){
+std::string terminal::algebraicFromShort(uint16_t m) {
     int32_t sq1 = square1(m), sq2 = square2(m), prom = promotion(m), spec = special(m);
-    std::string s = {char(col(sq1)+int32_t('a')), char(row(sq1)+int32_t('1')), char(col(sq2)+int32_t('a')), char(row(sq2)+int32_t('1'))};
+    std::string s = {char(col(sq1) + int32_t('a')), char(row(sq1) + int32_t('1')), char(col(sq2) + int32_t('a')), char(row(sq2) + int32_t('1'))};
     if (spec == PROMOTE)
-        s += int2Letter[prom+7];
+        s += int2Letter[prom + 7];
     return s;
+}

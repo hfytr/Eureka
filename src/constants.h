@@ -21,6 +21,8 @@
 #define NULLMOVE 0
 #define REDUCE_AFTER 4
 #define SEE_CUTOFF (-100)
+#define QUEENSIDE 0xe
+#define KINGSIDE 0x60
 
 extern int32_t DeBruijnLookup[64];
 extern int32_t rookShift[64];
