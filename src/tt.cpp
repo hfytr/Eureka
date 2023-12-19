@@ -20,19 +20,19 @@ void TT::resize(uint32_t s){
 void TT::push(TTnode a){
     int32_t minDepth;
     for (int32_t i = 0; i < NUM_BUCKETS; i++){
-        if (container[a.hash%size][i].hash == 0){
-            container[a.hash%size][i] = a;
+        if (container[a.hash.getKey() % size][i].hash.getKey() == 0){
+            container[a.hash.getKey() % size][i] = a;
             return;
-        } else if (i == 0 || container[a.hash%size][i].depth < container[a.hash%size][minDepth].depth)
+        } else if (i == 0 || container[a.hash.getKey() % size][i].depth < container[a.hash.getKey() % size][minDepth].depth)
             minDepth = i;
     }
-    container[a.hash%size][minDepth] = a;
+    container[a.hash.getKey() % size][minDepth] = a;
 }
 
-TTnode TT::get(uint64_t hash){
+TTnode TT::get(Zobrist hash){
     for (int32_t i = 0; i < NUM_BUCKETS; i++)
-        if (container[hash%size][i].hash == hash)
-            return container[hash%size][i];
+        if (container[hash.getKey() % size][i].hash == hash)
+            return container[hash.getKey() % size][i];
     return {};
 }
 

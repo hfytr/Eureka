@@ -62,9 +62,9 @@ void uci::takeInput(){
                 } else
                     for (i = 2; i < 8; i++)
                         fen += cur[i] + (i == 7 ? "" : " ");
-                e.b = board(fen);
+                e.b = Board(fen);
                 for (i = ++i; i < cur.size(); i++)
-                    e.b.makeMove(shortFromAlgebraic(cur[i], &e.b));
+                    e.b.makeMove(Algebraic::constructMove(cur[i], &e.b));
                 break;
             }
             case 6:{ // go
@@ -75,7 +75,7 @@ void uci::takeInput(){
                     if (gotoken.count(cur[i]) == 0){
                         switch(gotoken.at(token)){
                             case 1:{ // searchmoves
-                                t.moves.push(shortFromAlgebraic(cur[i],&e.b));
+                                t.moves.push(Algebraic::constructMove(cur[i],&e.b));
                                 break;
                             }
                             case 2:{ // wtime
@@ -100,17 +100,17 @@ void uci::takeInput(){
                             }
                             case 7:{ // depth
                                 t.length = stoi(cur[i]);
-                                t.mode = 2;
+                                t.mode = DEPTH;
                                 break;
                             }
                             case 8:{ // nodes
                                 t.length = stoi(cur[i]);
-                                t.mode = 1;
+                                t.mode = NODES;
                                 break;
                             }
                             case 9:{ // movetime
                                 t.length = stoi(cur[i]);
-                                t.mode = 0;
+                                t.mode = TIME;
                                 break;
                             }
                         }
@@ -119,8 +119,8 @@ void uci::takeInput(){
                         token = cur[i];
                     else{
                         if (cur[i] == "infinite"){
-                            t.length = MAX32;
-                            t.mode = 2;
+                            t.length = CANCASTLE;
+                            t.mode = DEPTH;
                         } else
                             t.ponder = true;
                     }
@@ -145,9 +145,9 @@ void uci::takeInput(){
                 break;
             }
             case 10:{ // printboard
-                std::cout << e.b.toString();
-                if (e.debug)
-                    std::cout << e.b.printBB();
+                std::cout << e.b.print();
+                if (e.debug == 1)
+                    std::cout << e.b.printBitboards();
             }
         }
     }
@@ -166,7 +166,7 @@ void uci::processInput(){
         if (quit)
             return;
         if (!t.ponder)
-            std::cout << ("bestmove " + algebraicFromShort(e.getMove(t))) << std::endl;
+            std::cout << ("bestmove " + Algebraic::move(e.getMove(t).m())) << std::endl;
         tasks.pop();
         if (tasks.empty())
             condReady.notify_one();

@@ -11,65 +11,74 @@
 
 using namespace std::chrono;
 
-class xMove{
+class xMove : Move {
 public:
     int32_t eval;
-    uint16_t m;
-    xMove(int32_t eval_=0, uint16_t m_=0){
-        eval=eval_;m=m_;
+    xMove(int32_t eval_=0, Move m = 0){
+        eval=eval_;
+        container = m.raw();
     }
+    Move m() { return container; }
+};
+
+enum TaskMode {
+    OPEN=0,
+    TIME=1,
+    NODES=2,
+    DEPTH=3
 };
 
 class task{
 public:
-    int32_t increment[2], timeLeft[2], movestogo, length, mode;
+    uint16_t increment[2], timeLeft[2], movestogo, length;
+    TaskMode mode;
     moveList moves;
     bool ponder;
-    task(int32_t winc_ = 0, int32_t binc_ = 0, int32_t wtime_ = -1, int32_t btime_ = -1, int32_t movestogo_ = -1, int32_t mode_ = -1, int32_t length_ = 2000, bool ponder_ = false){
+    task(uint16_t winc_ = 0, uint16_t binc_ = 0, uint16_t wtime_ = -1, uint16_t btime_ = -1, uint16_t movestogo_ = -1, TaskMode mode_ = OPEN, int16_t length_ = 2000, bool ponder_ = false){
         increment[0]=winc_;increment[1]=binc_;timeLeft[0]=wtime_;timeLeft[1]=btime_;movestogo=movestogo_;mode=mode_;length=length_;ponder=ponder_;
     }
 };
 
 class engine {
 public:
-    board b;
-    int64_t nodes{};
+    Board b;
+    uint64_t nodes;
     task t;
-    std::vector<std::vector<uint16_t>> pv;
-    std::vector<uint16_t> lastpv;
-    std::vector<std::pair<uint16_t,uint16_t>> killers;
+    std::vector<std::vector<Move>> pv;
+    std::vector<Move> lastpv;
+    std::vector<std::vector<Move>> killers;
     time_point<steady_clock> start;
-    uint32_t fullDepth = 1;
+    uint16_t fullDepth = 1;
     int32_t eval, moveOverhead = 20;
     TT tt = TT(DEFAULTTTSIZE);
     int32_t butterfly[2][64][64] = {};
-    bool over{}, debug = false, forceStop = false;
-    uint8_t rootType = PV_NODE;
+    bool over{}, forceStop = false;
+    uint8_t rootType = PV_NODE, debug = 0;
 
-    int32_t see(uint16_t m = 0, int32_t sq = -1);
+    int32_t see(Move m = 0, uint8_t sq = 64);
     int32_t negamax(uint8_t depth, int32_t alpha, int32_t beta), quiesce(int32_t alpha, int32_t beta);
-    int32_t initialTime();
+    uint32_t initialTime();
     xMove search(uint8_t depth, int32_t alpha, int32_t beta);
-    uint16_t getMove(task t);
+    xMove getMove(task t);
     bool checkOver(), isDbgLine();
     void printInfo();
     engine()= default;
 
-    inline bool isNullWindow(int64_t alpha, int64_t beta){
-        return std::abs(alpha-beta) == 1;
+    bool isNullWindow(int64_t alpha, int64_t beta){
+        return abs(alpha-beta) == 1;
     }
 };
 
 class scoredMoveList : moveList {
 public:
-    scoredMoveList(uint8_t depth_, std::pair<uint16_t,uint16_t> killers_, engine* e_, moveList list);
-    uint16_t get();
-    uint16_t len(){ return length; }
+    scoredMoveList(uint8_t depth_, std::vector<Move> killers_, engine* e_, moveList list);
+    Move get();
+    uint8_t len(){ return length; }
 private:
     int32_t scores[256], see[256], i = 0;
     uint8_t depth;
     bool ispv;
-    std::pair<uint16_t, uint16_t> killers;
+    std::vector<Move> killers;
     engine* e;
     int32_t scoreMove();
 };
