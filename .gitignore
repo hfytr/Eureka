@@ -1,4 +1,4 @@
-books/
+debug.epd
 cutechess/
 lichess-bot/
 SPRT/
@@ -6,3 +6,4 @@ build/
 .vscode/
 Ignore/
 cmake-build-debug-event-trace/
+training/
