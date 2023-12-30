@@ -752,8 +752,8 @@ uint8_t Board::lva(uint8_t sq, Bitboard traded, Color p) {
 Move Algebraic::constructMove(std::string a, Board *b) {
     uint8_t sq1 = a[0] - 'a' + (a[1] - '1') * 8;
     uint8_t sq2 = a[2] - 'a' + (a[3] - '1') * 8;
-    PieceType promote;
-    MoveType special;
+    PieceType promote = ROOK;
+    MoveType special = NONE;
     if (a.length() > 4) {
         special = PROMOTE;
         switch (a[4]) {

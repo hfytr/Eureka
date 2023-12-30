@@ -11,15 +11,6 @@
 
 using namespace std::chrono;
 
-class xMove : Move {
-public:
-    int32_t eval;
-    xMove(int32_t eval_=0, Move m = 0){
-        eval=eval_;
-        container = m.raw();
-    }
-    Move m() { return container; }
-};
 
 enum TaskMode {
     OPEN=0,
@@ -69,11 +60,10 @@ public:
     }
 };
 
-class scoredMoveList : moveList {
+class scoredMoveList : public moveList {
 public:
     scoredMoveList(uint8_t depth_, std::vector<Move> killers_, engine* e_, moveList list);
     Move get();
-    uint8_t len(){ return length; }
 private:
     int32_t scores[256], see[256], i = 0;
     uint8_t depth;

@@ -152,12 +152,12 @@ int32_t engine::quiesce(int32_t alpha, int32_t beta){
     nodes++;
 
     TTnode entry = tt.get(b.getZobrist());
-    if (entry.m.raw() != 0 &&
+    if (!entry.m.isNull() &&
         (entry.type == PV_NODE ||
-        (entry.type == FAIL_HIGH && entry.eval >= beta) ||
-        (entry.type == FAIL_LOW && entry.eval <= alpha))
+        (entry.type == FAIL_HIGH && entry.m.eval >= beta) ||
+        (entry.type == FAIL_LOW && entry.m.eval <= alpha))
     )
-        return entry.eval;
+        return entry.m.eval;
 
     scoredMoveList moves = scoredMoveList(0, {NULLMOVE, NULLMOVE}, this, b.genMoves(false,true));
 
@@ -184,7 +184,7 @@ int32_t engine::quiesce(int32_t alpha, int32_t beta){
 
         if (cur >= beta){
             nodeType = FAIL_HIGH;
-            tt.push(TTnode(b.getZobrist(), best.eval, best.m(), 0, nodeType));
+            tt.push(TTnode(b.getZobrist(), best, 0, nodeType));
             return cur;
         }
 
@@ -200,7 +200,7 @@ int32_t engine::quiesce(int32_t alpha, int32_t beta){
             return best.eval;
     }
 
-    tt.push(TTnode(b.getZobrist(), best.eval, best.m(), 0, nodeType));
+    tt.push(TTnode(b.getZobrist(), best, 0, nodeType));
     return best.eval;
 }
 
@@ -210,15 +210,15 @@ int32_t engine::negamax(uint8_t depth, int32_t alpha, int32_t beta){
 
     TTnode entry = tt.get(b.getZobrist());
     if (isNullWindow(alpha, beta) &&
-        entry.m.raw() != 0 &&
+        !entry.m.isNull() &&
         entry.depth >= depth && (
             entry.type == PV_NODE ||
-            (entry.type == FAIL_HIGH && entry.eval >= beta) ||
-            (entry.type == FAIL_LOW && entry.eval <= alpha))
+            (entry.type == FAIL_HIGH && entry.m.eval >= beta) ||
+            (entry.type == FAIL_LOW && entry.m.eval <= alpha))
     ){
         if (depth != 0)
             pv[depth][0] = NULLMOVE;
-        return entry.eval;
+        return entry.m.eval;
     }
     
     xMove best;
@@ -282,7 +282,7 @@ int32_t engine::negamax(uint8_t depth, int32_t alpha, int32_t beta){
                 butterfly[b.getstm()][m.square1()][m.square2()] += depth*depth;
             }
             nodeType = FAIL_HIGH;
-            tt.push(TTnode(b.getZobrist(), best.eval, best.m(), depth, nodeType));
+            tt.push(TTnode(b.getZobrist(), best, depth, nodeType));
             if (depth > 2)
                 killers[depth-3] = {0,0};
             return cur;
@@ -303,7 +303,7 @@ int32_t engine::negamax(uint8_t depth, int32_t alpha, int32_t beta){
         return 0;
     }
 
-    tt.push(TTnode(b.getZobrist(), best.eval, best.m(), depth, nodeType));
+    tt.push(TTnode(b.getZobrist(), best, depth, nodeType));
     if (depth > 2)
         killers[fullDepth - depth + 2] = {NULLMOVE, NULLMOVE};
     return best.eval;
@@ -365,7 +365,7 @@ xMove engine::search(uint8_t depth, int32_t alpha, int32_t beta){
 
         if (cur >= beta){
             rootType = FAIL_HIGH;
-            tt.push(TTnode(b.getZobrist(), cur, m, depth, rootType));
+            tt.push(TTnode(b.getZobrist(), {cur, m}, depth, rootType));
             return {cur,m};
         }
 
@@ -381,7 +381,7 @@ xMove engine::search(uint8_t depth, int32_t alpha, int32_t beta){
             return best;
     }
     
-    tt.push(TTnode(b.getZobrist(), best.eval, best.m(), depth, rootType));
+    tt.push(TTnode(b.getZobrist(), best, depth, rootType));
     if (rootType == PV_NODE)
         lastpv = pv[depth-1];
     return best;
@@ -421,7 +421,7 @@ xMove engine::getMove(task t_){
             case PV_NODE:{
                 printInfo();
                 fullDepth++;
-                pv.emplace_back(fullDepth,0);
+                pv.emplace_back(fullDepth,NULLMOVE);
                 best = cur;
                 over = checkOver();
                 break;

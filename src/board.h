@@ -55,9 +55,10 @@ enum MoveType {
 class Move {
 public:
     // 16 bit move, bits 0-5 are square 1, bits 6-11 square 2, bits 12-13 promotion piece, bits 14-15 special flag (normal, promotion, castling, or en pessant)
-    Move (uint8_t square1=0, uint8_t square2=0, PieceType promote=ROOK, MoveType special=NONE){
-        container = square1 | square2 << 6 | (static_cast<uint8_t>(promote)-3) << 12 | special << 14;
+    Move (uint8_t square1, uint8_t square2, PieceType promote=ROOK, MoveType special=NONE){
+        container = square1 | square2 << 6 | (static_cast<uint8_t>(promote)-3) << 12 | static_cast<uint8_t>(special) << 14;
     }
+    Move (uint16_t s = 0) { container = s; }
 
     [[nodiscard]] MoveType special() const { return static_cast<MoveType>((container & 0xc000) >> 14); }
     [[nodiscard]] PieceType promotion() const { return static_cast<PieceType>(((container & 0x3000) >> 12) + 3); }
@@ -91,7 +92,7 @@ class Board;
 class Zobrist {
 public:
     Zobrist(uint64_t ll = 0) { container = ll; }
-    Zobrist(Board* b);
+    explicit Zobrist(Board* b);
     uint64_t getKey() const { return container; }
     bool operator==(Zobrist& z) const { return z.container == container; }
     bool operator!=(Zobrist& z) const { return z.container != container; }
@@ -197,7 +198,7 @@ private:
     std::pair<Bitboard, uint8_t> genAttacks(Piece p, uint8_t sq, bool lva);
     void genCastle(uint8_t piece);
 
-    Move gameHist[5898] = {};
+    Move gameHist[5898] = {(uint16_t) 0};
     Piece captured[5898] = {};
     uint8_t fiftyCount[5898] = {};
     uint16_t gameLen = 0;

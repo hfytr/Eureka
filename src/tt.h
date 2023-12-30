@@ -6,16 +6,25 @@
 #include "constants.h"
 #include "board.h"
 
+class xMove : public Move {
+public:
+    int32_t eval;
+    xMove(int32_t eval_=0, Move m = 0){
+        eval=eval_;
+        container = m.raw();
+    }
+    Move m() { return Move(container); }
+};
+
 class TTnode {
 public:
     Zobrist hash;
-    int32_t eval;
-    Move m;
+    xMove m;
     uint8_t type;
     uint8_t depth;
 
-    TTnode(Zobrist hash_=(uint64_t)0, int32_t eval_=0, Move m_=0, uint8_t depth_=0, uint8_t type_ = 0){
-        hash=hash_;eval=eval_;m=m_;depth=depth_;type=type_;
+    TTnode(Zobrist hash_=0ULL, xMove m_=0ULL, uint8_t depth_=0, uint8_t type_=0){
+        hash=hash_;m=m_;depth=depth_;type=type_;
     }
 };
 
