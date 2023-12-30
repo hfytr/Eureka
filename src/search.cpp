@@ -71,7 +71,9 @@ int32_t engine::see(Move m, uint8_t sq){
     result.push_back(0);
     for (int8_t i = victimVal.size()-1; i >= 0; i--)
         result[i] = std::max(0,victimVal[i] - result[i+1]);
-    return result[0];
+    if (m.isNull())
+        return result[0];
+    return victimVal[0] - result[1]; // if m is provided we cannot decline the first capture
 }
 
 bool engine::checkOver(){
@@ -308,7 +310,11 @@ int32_t engine::negamax(uint8_t depth, int32_t alpha, int32_t beta){
         killers[fullDepth - depth + 2] = {NULLMOVE, NULLMOVE};
     return best.eval;
 }
-
+/*
+position fen r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/2N2N2/PPPP1PPP/R1BQK2R b KQkq - 0 1
+debug on
+go infinite
+*/
 /// @brief loops through all moves and searches with negamax, returning best move; uses same search strategies as negamax
 /// @param depth depth at which to search
 /// @return best move for given depth
@@ -375,7 +381,7 @@ xMove engine::search(uint8_t depth, int32_t alpha, int32_t beta){
         gameOver = false;
 
         if (debug == 1)
-            std::cout << "info currmove " << Algebraic::move(m) << " currmovenumber " << i+1 << " score cp " << cur << std::endl;
+            std::cout << m.print() << ' ' << cur << std::endl;
 
         if (over)
             return best;
@@ -387,6 +393,7 @@ xMove engine::search(uint8_t depth, int32_t alpha, int32_t beta){
     return best;
 }
 
+//  r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/2N2N2/PPPP1PPP/R1BQK2R b KQkq - 0 1
 /// @brief performs iterative deepening (ID), searching at increasing depths until time is exhausted
 /// @param t_ contains the list of mvoes to consider, the cutoff mode (nodes/time/depth), and information about the time control
 /// @return best move in position
