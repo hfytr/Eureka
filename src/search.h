@@ -56,7 +56,7 @@ public:
     engine()= default;
 
     bool isNullWindow(int64_t alpha, int64_t beta){
-        return abs(alpha-beta) == 1;
+        return beta - alpha == 1;
     }
 };
 

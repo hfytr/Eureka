@@ -328,8 +328,8 @@ Board::Board(std::string fen) {
     // initialise piece square tables: adds the base piece value to the square value for each piece / game phase
     for (i = 0; i < 6; i++) {
         for (uint8_t j = 0; j < 64; j++) {
-            mgpesto[i][j] = mgval[i] + mgpestoPre[i][j ^ 56];
-            egpesto[i][j] = egval[i] + egpestoPre[i][j ^ 56];
+            mgpesto[i][j] = mgval[i] + mgpestoPre[i][mirror(j)]; // tables were provided from a mirror perspective
+            egpesto[i][j] = egval[i] + egpestoPre[i][mirror(j)];
         }
     }
 
@@ -649,6 +649,7 @@ std::pair<Bitboard, uint8_t> Board::genAttacks(Piece p, uint8_t sq, bool lva){
 }
 
 moveList Board::genMoves(bool legal_, bool quiesce_) {
+    bool dbg = (gameHist[1].raw() == 1965 && gameHist[2].raw() == 3418);
     legal = legal_;
     quiesce = quiesce_;
     pins[0] = 0;

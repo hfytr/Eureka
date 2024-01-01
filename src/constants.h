@@ -20,7 +20,7 @@
 #define NUM_BUCKETS 4
 #define NULLMOVE 0
 #define REDUCE_AFTER 4
-#define SEE_CUTOFF (-100)
+#define SEE_CUTOFF (-1000)
 #define QUEENSIDE 0xe
 #define KINGSIDE 0x60
 

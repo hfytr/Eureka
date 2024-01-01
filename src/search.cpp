@@ -55,13 +55,11 @@ int32_t engine::see(Move m, uint8_t sq){
 
     std::vector<int32_t> result, victimVal;
     while (attacker != 64){
+        if (b.getsq(victim).getType() == KING)
+            break;
         victimVal.push_back(b.val(victim));
         stm = opp(stm);
         victim = attacker;
-        if (b.getsq(victim).getType() == KING){
-            victimVal.pop_back();
-            break;
-        }
         attacker = b.lva(sq,traded,stm);
         if (attacker != 64)
             traded.toggle(attacker);
@@ -95,10 +93,10 @@ bool engine::checkOver(){
 /// @brief checks whether current board is line to debug
 /// @return bool - true if is debug line else false
 bool engine::isDbgLine(){
-    std::vector<Move> dbgLine = {};
+    std::vector<std::string> dbgLine = {"f6g4", "c4f7"};
     int32_t i;
     for (i = 0; i < dbgLine.size(); i++)
-        if (i == b.getLen() || dbgLine[i].raw() != b.getHist(i+1).raw())
+        if (i == b.getLen() || dbgLine[i] != Algebraic::move(b.getHist(i+1)))
             break;
     if (i == b.getLen())
         return true;
@@ -106,7 +104,7 @@ bool engine::isDbgLine(){
 }
 
 scoredMoveList::scoredMoveList(uint8_t depth_, std::vector<Move> killers_, engine *e_, moveList list){
-    depth=depth_;
+    depth= depth_;
     killers = std::move(killers_);
     e=e_;
     for (int32_t j = 0; j < list.len(); j++){
@@ -150,6 +148,7 @@ Move scoredMoveList::get(){
 }
 
 int32_t engine::quiesce(int32_t alpha, int32_t beta){
+    bool dbg = isDbgLine() && fullDepth == 1 && b.getLen() == 2;
     over = checkOver();
     nodes++;
 
@@ -177,6 +176,8 @@ int32_t engine::quiesce(int32_t alpha, int32_t beta){
     for (int32_t i = 0; i < moves.len(); i++){
         Move m = moves.get();
         illegal = b.makeMove(m);
+        if (dbg)
+            std::cout << m.print();
         if (illegal){
             b.unmakeMove();
             continue;
@@ -209,6 +210,7 @@ int32_t engine::quiesce(int32_t alpha, int32_t beta){
 int32_t engine::negamax(uint8_t depth, int32_t alpha, int32_t beta){
     over = checkOver();
     nodes++;
+    bool dbg = isDbgLine();
 
     TTnode entry = tt.get(b.getZobrist());
     if (isNullWindow(alpha, beta) &&
@@ -255,8 +257,11 @@ int32_t engine::negamax(uint8_t depth, int32_t alpha, int32_t beta){
         int32_t cur;
         if (gameOver)
             cur = -negamax(depth-1, -beta, -alpha);
-        else{
-            uint8_t reduction = movesSearched >= REDUCE_AFTER && b.getsq(m.square2()).getType() == EMPTY && depth >= 3 && !inCheck;
+        else {
+            uint8_t reduction = movesSearched >= REDUCE_AFTER &&
+                    b.getsq(m.square2()).getType() == EMPTY &&
+                    depth >= 3 &&
+                    !inCheck;
             cur =  -negamax(depth-1, -alpha, -alpha+1);
             if (cur > alpha && cur < beta)
                 cur = -negamax(depth-1-reduction, -beta, -alpha);
@@ -312,8 +317,10 @@ int32_t engine::negamax(uint8_t depth, int32_t alpha, int32_t beta){
 }
 /*
 position fen r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/2N2N2/PPPP1PPP/R1BQK2R b KQkq - 0 1
+printboard
 debug on
-go infinite
+go depth 1
+
 */
 /// @brief loops through all moves and searches with negamax, returning best move; uses same search strategies as negamax
 /// @param depth depth at which to search
@@ -349,7 +356,7 @@ xMove engine::search(uint8_t depth, int32_t alpha, int32_t beta){
             cur = -negamax(depth-1, -beta, -alpha);
         else{
             uint8_t reduction = movesSearched >= REDUCE_AFTER && b.getsq(m.square2()).getType() == EMPTY && depth >= 3 && !inCheck;
-            cur =  -negamax(depth-1-reduction, -alpha-1, -alpha);
+            cur =  -negamax(std::max(depth-1-reduction, 0), -alpha-1, -alpha);
             if (cur > alpha && cur < beta)
                 cur = -negamax(depth-1, -beta, -alpha);
         }
