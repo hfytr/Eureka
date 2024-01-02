@@ -9,7 +9,7 @@
 class xMove : public Move {
 public:
     int32_t eval;
-    xMove(int32_t eval_=0, Move m = 0){
+    xMove(int32_t eval_ = 0, Move m = 0){
         eval=eval_;
         container = m.raw();
     }

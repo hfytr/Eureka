@@ -735,7 +735,7 @@ int32_t Board::eval() {
     Bitboard pieces = bitbs[0] | bitbs[1];
     while (pieces.raw()) {
         i = pieces.poplsb();
-        result[sqs[i].getColor()] += val(i);
+        result[sqs[i].getColor()] += val(i, false);
     }
     return (result[0] - result[1]) * (stm ? -1 : 1);
 }

@@ -20,14 +20,13 @@ enum TaskMode {
     DEPTH=3
 };
 
-
 class task{
 public:
-    uint16_t increment[2], timeLeft[2], movestogo, length;
+    uint32_t increment[2], timeLeft[2], movestogo = MAX32, length;
     TaskMode mode;
     moveList moves;
     bool ponder;
-    task(uint16_t winc_ = 0, uint16_t binc_ = 0, uint16_t wtime_ = -1, uint16_t btime_ = -1, uint16_t movestogo_ = -1, TaskMode mode_ = OPEN, int16_t length_ = 2000, bool ponder_ = false){
+    task(uint32_t winc_ = 0, uint32_t binc_ = 0, uint32_t wtime_ = 0, uint32_t btime_ = 0, uint32_t movestogo_ = MAX32, TaskMode mode_ = OPEN, uint32_t length_ = 0, bool ponder_ = false){
         increment[0]=winc_;increment[1]=binc_;timeLeft[0]=wtime_;timeLeft[1]=btime_;movestogo=movestogo_;mode=mode_;length=length_;ponder=ponder_;
     }
 };
@@ -55,7 +54,7 @@ public:
     xMove search(uint8_t depth, int32_t alpha, int32_t beta);
     xMove getMove(task t);
     bool checkOver(), isDbgLine();
-    void printInfo();
+    void printInfo(xMove best);
     engine()= default;
 
     bool isNullWindow(int64_t alpha, int64_t beta){
