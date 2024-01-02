@@ -9,11 +9,17 @@
 #include "constants.h"
 #include "search.h"
 
-void engine::printInfo(){
+void engine::printInfo(xMove best){
     if (debug == 2)
         return;
     auto passed = steady_clock::now()-start;
-    std::cout << "info depth " << fullDepth << " nodes " << nodes << " time " << duration_cast<milliseconds>(passed).count() << " nps " << 1000 * nodes/(duration_cast<milliseconds>(passed).count()+1) << " score cp " << eval << std::endl;
+    std::cout <<
+        "info depth " << fullDepth <<
+        " nodes " << nodes <<
+        " time " << duration_cast<milliseconds>(passed).count() <<
+        " nps " << 1000 * nodes/(duration_cast<milliseconds>(passed).count()+1) <<
+        " score cp " << best.eval << std::endl;
+
     std::cout << "info pv";
     for (uint8_t i = 0; i < lastpv.size(); i++){
         if (lastpv[i].isNull())
@@ -24,11 +30,13 @@ void engine::printInfo(){
 }
 
 uint32_t engine::initialTime(){
-    int32_t optimalTime;
-    if (t.movestogo > 0)
-        optimalTime = t.increment[b.getstm()]/2 + t.timeLeft[b.getstm()]/t.movestogo;
+    uint32_t optimalTime;
+    if (t.movestogo != MAX32)
+        optimalTime = t.increment[b.getstm()] / 2 +
+            t.timeLeft[b.getstm()] / t.movestogo;
     else
-        optimalTime = t.increment[b.getstm()]/2 + t.timeLeft[b.getstm()]/20;
+        optimalTime = t.increment[b.getstm()]/2 +
+            t.timeLeft[b.getstm()] / 20;
     return std::min(optimalTime, t.timeLeft[b.getstm()]-moveOverhead);
 }
 
@@ -220,7 +228,7 @@ int32_t engine::negamax(uint8_t depth, int32_t alpha, int32_t beta){
         return entry.m.eval;
 
     xMove best;
-    bool illegal, gameOver = true, inCheck = b.attacked();
+    bool illegal, noMovesSearched = true, inCheck = b.attacked();
     NodeType nodeType = FAIL_LOW;
     uint8_t movesSearched = 0;
 
@@ -257,7 +265,7 @@ int32_t engine::negamax(uint8_t depth, int32_t alpha, int32_t beta){
         }
         movesSearched++;
         int32_t cur;
-        if (gameOver)
+        if (noMovesSearched)
             cur = -negamax(depth-1, -beta, -alpha);
         else {
             uint8_t reduction = movesSearched >= REDUCE_AFTER &&
@@ -270,7 +278,7 @@ int32_t engine::negamax(uint8_t depth, int32_t alpha, int32_t beta){
         }
         b.unmakeMove();
 
-        if (cur > best.eval || gameOver){
+        if (cur > best.eval || noMovesSearched){
             best = {cur, m};
             if (cur > alpha){
                 nodeType = PV_NODE;
@@ -300,13 +308,13 @@ int32_t engine::negamax(uint8_t depth, int32_t alpha, int32_t beta){
         if (cur == CHECKMATE)
             return CHECKMATE;
 
-        gameOver = false;
+        noMovesSearched = false;
 
         if (over)
             return best.eval;
     }
     
-    if (gameOver){
+    if (noMovesSearched){
         if (b.attacked())
             return CHECKMATED;
         return 0;
@@ -317,20 +325,14 @@ int32_t engine::negamax(uint8_t depth, int32_t alpha, int32_t beta){
         killers[fullDepth - depth + 2] = {NULLMOVE, NULLMOVE};
     return best.eval;
 }
-/*
-position fen r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/2N2N2/PPPP1PPP/R1BQK2R b KQkq - 0 1
-printboard
-debug on
-go depth 1
 
-*/
 /// @brief loops through all moves and searches with negamax, returning best move; uses same search strategies as negamax
 /// @param depth depth at which to search
 /// @return best move for given depth
 xMove engine::search(uint8_t depth, int32_t alpha, int32_t beta){
     nodes++;
     xMove best = {MIN32,0};
-    bool gameOver = true, inCheck = b.attacked();
+    bool noMovesSearched = true, inCheck = b.attacked();
     uint8_t movesSearched = 0;
     
     if (b.eval() >= beta){
@@ -354,7 +356,7 @@ xMove engine::search(uint8_t depth, int32_t alpha, int32_t beta){
         }
         movesSearched++;
         int32_t cur;
-        if (gameOver)
+        if (noMovesSearched)
             cur = -negamax(depth-1, -beta, -alpha);
         else{
             uint8_t reduction = movesSearched >= REDUCE_AFTER && b.getsq(m.square2()).getType() == EMPTY && depth >= 3 && !inCheck;
@@ -364,8 +366,8 @@ xMove engine::search(uint8_t depth, int32_t alpha, int32_t beta){
         }
         b.unmakeMove();
 
-        if (cur > best.eval || gameOver){
-            best = {cur, m};
+        if (cur > best.eval || noMovesSearched){
+            best = xMove(cur, m);
             if (cur > alpha){
                 alpha = cur;
                 rootType = PV_NODE;
@@ -387,7 +389,7 @@ xMove engine::search(uint8_t depth, int32_t alpha, int32_t beta){
         if (cur == CHECKMATE)
             return {CHECKMATE, m};
 
-        gameOver = false;
+        noMovesSearched = false;
 
         if (debug == 1)
             std::cout << m.print() << ' ' << cur << std::endl;
@@ -402,7 +404,6 @@ xMove engine::search(uint8_t depth, int32_t alpha, int32_t beta){
     return best;
 }
 
-//  r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/2N2N2/PPPP1PPP/R1BQK2R b KQkq - 0 1
 /// @brief performs iterative deepening (ID), searching at increasing depths until time is exhausted
 /// @param t_ contains the list of mvoes to consider, the cutoff mode (nodes/time/depth), and information about the time control
 /// @return best move in position
@@ -435,7 +436,7 @@ xMove engine::getMove(task t_){
         cur = search(fullDepth, best.eval - alphaOffset, best.eval + betaOffset);
         switch(rootType){
             case PV_NODE:{
-                printInfo();
+                printInfo(best);
                 fullDepth++;
                 pv.emplace_back(fullDepth,NULLMOVE);
                 best = cur;
