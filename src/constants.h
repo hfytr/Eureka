@@ -12,9 +12,6 @@
 #define CANCASTLE 65535
 #define CANTCASTLE 65534
 #define GOOD_CAPTURE (MAX32 - 2000000)
-#define FAIL_HIGH 0
-#define FAIL_LOW 1
-#define PV_NODE 2
 #define CHECKMATE (MAX32-1)
 #define CHECKMATED (MIN32+1)
 #define NUM_BUCKETS 4

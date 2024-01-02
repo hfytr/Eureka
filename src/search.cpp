@@ -153,18 +153,16 @@ int32_t engine::quiesce(int32_t alpha, int32_t beta){
     nodes++;
 
     TTnode entry = tt.get(b.getZobrist());
-    if (!entry.m.isNull() &&
-        (entry.type == PV_NODE ||
+    if ((entry.type == PV_NODE ||
         (entry.type == FAIL_HIGH && entry.m.eval >= beta) ||
-        (entry.type == FAIL_LOW && entry.m.eval <= alpha))
-    )
+        (entry.type == FAIL_LOW && entry.m.eval <= alpha)))
         return entry.m.eval;
 
     scoredMoveList moves = scoredMoveList(0, {NULLMOVE, NULLMOVE}, this, b.genMoves(false,true));
 
     xMove best;
     bool illegal;
-    uint8_t nodeType = FAIL_LOW;
+    NodeType nodeType = FAIL_LOW;
 
     // it is (mostly) possible to not make any captures and instead "stand pat" so this is alpha's initial value
     best.eval = b.eval();
@@ -218,16 +216,13 @@ int32_t engine::negamax(uint8_t depth, int32_t alpha, int32_t beta){
         entry.depth >= depth && (
             entry.type == PV_NODE ||
             (entry.type == FAIL_HIGH && entry.m.eval >= beta) ||
-            (entry.type == FAIL_LOW && entry.m.eval <= alpha))
-    ){
-        if (depth != 0)
-            pv[depth][0] = NULLMOVE;
+            (entry.type == FAIL_LOW && entry.m.eval <= alpha)))
         return entry.m.eval;
-    }
-    
+
     xMove best;
     bool illegal, gameOver = true, inCheck = b.attacked();
-    uint8_t nodeType = FAIL_LOW, movesSearched = 0;
+    NodeType nodeType = FAIL_LOW;
+    uint8_t movesSearched = 0;
 
     int32_t curEval = b.eval();
     if (curEval >= beta){
@@ -250,6 +245,13 @@ int32_t engine::negamax(uint8_t depth, int32_t alpha, int32_t beta){
 
         illegal = b.makeMove(m);
         if (illegal){
+            b.unmakeMove();
+            continue;
+        }
+        else if (depth == 1 &&
+            !b.attacked() &&
+            b.getCapt(b.getLen()) == EMPTY &&
+            curEval + FUTILITY_MARGIN < alpha) {
             b.unmakeMove();
             continue;
         }

@@ -16,14 +16,20 @@ public:
     Move m() { return Move(container); }
 };
 
+enum NodeType {
+    PV_NODE = 0,
+    FAIL_HIGH = 1,
+    FAIL_LOW = 2
+};
+
 class TTnode {
 public:
     Zobrist hash;
     xMove m;
-    uint8_t type;
+    NodeType type;
     uint8_t depth;
 
-    TTnode(Zobrist hash_=0ULL, xMove m_=0ULL, uint8_t depth_=0, uint8_t type_=0){
+    TTnode(Zobrist hash_=0ULL, xMove m_=0ULL, uint8_t depth_=0, NodeType type_=PV_NODE){
         hash=hash_;m=m_;depth=depth_;type=type_;
     }
 };

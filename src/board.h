@@ -175,6 +175,7 @@ public:
     [[nodiscard]] Move getHist(uint8_t i) const { return gameHist[i]; }
     [[nodiscard]] Zobrist getZobrist() const { return zobrist; }
     [[nodiscard]] uint16_t getLen() const { return gameLen; }
+    [[nodiscard]] PieceType getCapt(uint16_t moveNum) const { return captured[moveNum].getType(); }
 
     int32_t eval();
     int32_t val(uint8_t sq, bool simple = false);

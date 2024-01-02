@@ -11,6 +11,7 @@
 
 using namespace std::chrono;
 
+#define FUTILITY_MARGIN 250
 
 enum TaskMode {
     OPEN=0,
@@ -18,6 +19,7 @@ enum TaskMode {
     NODES=2,
     DEPTH=3
 };
+
 
 class task{
 public:
@@ -44,7 +46,8 @@ public:
     TT tt = TT(DEFAULTTTSIZE);
     int32_t butterfly[2][64][64] = {};
     bool over{}, forceStop = false;
-    uint8_t rootType = PV_NODE, debug = 0;
+    NodeType rootType = PV_NODE;
+    int8_t debug = 0;
 
     int32_t see(Move m = 0, uint8_t sq = 64);
     int32_t negamax(uint8_t depth, int32_t alpha, int32_t beta), quiesce(int32_t alpha, int32_t beta);
