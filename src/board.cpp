@@ -1,7 +1,6 @@
 #include <vector>
 #include <string>
 #include <cmath>
-#include <iostream>
 #include <algorithm>
 #include "board.h"
 #include "constants.h"
@@ -417,7 +416,6 @@ std::string Board::printBitboards(uint8_t i) {
     return s + '\n';
 }
 
-// updates board given move
 bool Board::makeMove(Move m) {
     if (m.isNull()) {
         bool tr = attacked() || fiftyCount[gameLen] >= 100;
@@ -679,8 +677,8 @@ moveList Board::genMoves(bool legal_, bool quiesce_) {
                     pushMove({piece, toSquare, static_cast<PieceType>(j), special});
             else pushMove({piece, toSquare, ROOK, special});
         }
-
-        genCastle(piece);
+        if (!quiesce)
+            genCastle(piece);
     }
     legal = false;
     quiesce = false;

@@ -40,7 +40,7 @@ public:
     std::vector<std::vector<Move>> killers;
     time_point<steady_clock> start;
     uint16_t fullDepth = 1;
-    int32_t eval, moveOverhead = 20;
+    int32_t moveOverhead = 20;
     TT tt = TT(DEFAULTTTSIZE);
     int32_t butterfly[2][64][64] = {};
     bool over{}, forceStop = false;
@@ -52,7 +52,7 @@ public:
     xMove search(uint8_t depth, int32_t alpha, int32_t beta);
     xMove getMove(task t);
     bool checkOver(), isDbgLine();
-    void printInfo();
+    void printInfo(int32_t eval);
     engine()= default;
 
     bool isNullWindow(int64_t alpha, int64_t beta){

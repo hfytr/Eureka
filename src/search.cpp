@@ -9,7 +9,7 @@
 #include "constants.h"
 #include "search.h"
 
-void engine::printInfo(){
+void engine::printInfo(int32_t eval){
     if (debug == 2)
         return;
     auto passed = steady_clock::now()-start;
@@ -93,7 +93,7 @@ bool engine::checkOver(){
 /// @brief checks whether current board is line to debug
 /// @return bool - true if is debug line else false
 bool engine::isDbgLine(){
-    std::vector<std::string> dbgLine = {"f6g4", "c4f7"};
+    std::vector<std::string> dbgLine = {};
     int32_t i;
     for (i = 0; i < dbgLine.size(); i++)
         if (i == b.getLen() || dbgLine[i] != Algebraic::move(b.getHist(i+1)))
@@ -148,7 +148,9 @@ Move scoredMoveList::get(){
 }
 
 int32_t engine::quiesce(int32_t alpha, int32_t beta){
-    bool dbg = isDbgLine() && fullDepth == 1 && b.getLen() == 2;
+    bool dbg = isDbgLine() && b.getLen() == 1;
+    if (dbg)
+        std::cout << b.print();
     over = checkOver();
     nodes++;
 
@@ -173,27 +175,27 @@ int32_t engine::quiesce(int32_t alpha, int32_t beta){
     if (best.eval >= beta)
         return best.eval;
 
-    for (int32_t i = 0; i < moves.len(); i++){
+    for (int32_t i = 0; i < moves.len(); i++) {
         Move m = moves.get();
         illegal = b.makeMove(m);
-        if (dbg)
-            std::cout << m.print();
-        if (illegal){
+        if (illegal) {
             b.unmakeMove();
             continue;
         }
         int32_t cur = -quiesce(-beta, -alpha);
         b.unmakeMove();
+        if (dbg)
+            std::cout << m.print() << cur << std::endl;
 
-        if (cur >= beta){
+        if (cur >= beta) {
             nodeType = FAIL_HIGH;
             tt.push(TTnode(b.getZobrist(), best, 0, nodeType));
             return cur;
         }
 
-        if (cur > best.eval){
+        if (cur > best.eval) {
             best = {cur, m};
-            if (cur > alpha){
+            if (cur > alpha) {
                 nodeType = PV_NODE;
                 alpha = cur;
             }
@@ -210,7 +212,6 @@ int32_t engine::quiesce(int32_t alpha, int32_t beta){
 int32_t engine::negamax(uint8_t depth, int32_t alpha, int32_t beta){
     over = checkOver();
     nodes++;
-    bool dbg = isDbgLine();
 
     TTnode entry = tt.get(b.getZobrist());
     if (isNullWindow(alpha, beta) &&
@@ -230,12 +231,10 @@ int32_t engine::negamax(uint8_t depth, int32_t alpha, int32_t beta){
     uint8_t nodeType = FAIL_LOW, movesSearched = 0;
 
     int32_t curEval = b.eval();
-    if (curEval >= beta){
-        if (depth == 0)
-            return curEval;
+    if (isNullWindow(alpha, beta) && curEval >= beta && depth >= 3){
         int32_t nullEval = MIN32;
         if (!b.makeMove(NULLMOVE))
-            nullEval = -negamax(depth-1, -beta, -beta+1);
+            nullEval = -negamax(depth-3, -beta, -beta+1);
         b.unmakeMove();
         if (nullEval >= beta)
             return nullEval;
@@ -316,10 +315,10 @@ int32_t engine::negamax(uint8_t depth, int32_t alpha, int32_t beta){
     return best.eval;
 }
 /*
-position fen r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/2N2N2/PPPP1PPP/R1BQK2R b KQkq - 0 1
+position fen r3kb1r/1ppq1ppp/p1n1bn2/1B1Np3/4P3/5N2/PPP2PPP/R1BQ1RK1 w kq - 0 9
 printboard
 debug on
-go depth 1
+go infinite
 
 */
 /// @brief loops through all moves and searches with negamax, returning best move; uses same search strategies as negamax
@@ -400,7 +399,6 @@ xMove engine::search(uint8_t depth, int32_t alpha, int32_t beta){
     return best;
 }
 
-//  r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/2N2N2/PPPP1PPP/R1BQK2R b KQkq - 0 1
 /// @brief performs iterative deepening (ID), searching at increasing depths until time is exhausted
 /// @param t_ contains the list of mvoes to consider, the cutoff mode (nodes/time/depth), and information about the time control
 /// @return best move in position
@@ -424,6 +422,7 @@ xMove engine::getMove(task t_){
     killers = {1,{NULLMOVE,NULLMOVE}};
 
     xMove best = search(1,MIN32,MAX32), cur;
+    printInfo(best.eval);
     fullDepth = 2;
     pv.emplace_back(fullDepth, 0);
     
@@ -433,7 +432,7 @@ xMove engine::getMove(task t_){
         cur = search(fullDepth, best.eval - alphaOffset, best.eval + betaOffset);
         switch(rootType){
             case PV_NODE:{
-                printInfo();
+                printInfo(best.eval);
                 fullDepth++;
                 pv.emplace_back(fullDepth,NULLMOVE);
                 best = cur;
