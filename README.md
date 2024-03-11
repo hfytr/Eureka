@@ -17,7 +17,7 @@
     * Promotion Type
   * Capture Move
     * Most Valuable Victim with Least Valuable Attacker (MVVLVA)
-    * Good/Bad captues via SEE
+    * Good/Bad captures via SEE
 * **Search:**
   * Cancellation Support
   * Iterative Deepening
