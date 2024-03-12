@@ -3,6 +3,10 @@
 </h3>
 </p>
 
+<h1 align="center">
+[Play on Lichess](https://lichess.org/@/EurekaEngine)
+<\h1>
+
 ## Features
 * **Evaluation:**
   * Material Development Evaluation
