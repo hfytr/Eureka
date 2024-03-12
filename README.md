@@ -1,11 +1,12 @@
 <h3 align="center">
 	Eureka, a C++ Alpha-Beta Chess Engine
 </h3>
-</p>
-
-<h1 align="center">
-[Play on Lichess](https://lichess.org/@/EurekaEngine)
-<\h1>
+<a href="https://lichess.org/@/EurekaEngine">
+<img
+        alt="Lichess"
+        src="https://img.shields.io/badge/Play%20on%20LICHESS-v1.0.0-blue?logo=lichess&style=for-the-badge"
+>
+</a>
 
 ## Features
 * **Evaluation:**
@@ -27,6 +28,7 @@
   * Iterative Deepening
     * Depth Data Output
     * Principle Variation Output
+    * Triangular PV Table
   * Aspiration Search
     * Narrow Windows
     * Bound-specific Widening
@@ -48,9 +50,8 @@
         * Depth and Moves Played Logarithmic Reduction
         * At least three-ply
       * Principle Variation Search
-        * Full Search on First Move 
+        * Full Search on First Move
   * Quiescence Search (QSearch)
-    * 
     * Static Evaluation
       * Beta Cutoff
       * Alpha Update
