@@ -1,7 +1,1 @@
-debug.epd
-cutechess/
-lichess-bot/
-SPRT/
-build/
-cmake-build-debug-event-trace/
-training/
+dist-newstyle/
