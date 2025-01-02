@@ -7,9 +7,10 @@ import Control.Monad.ST (ST, runST)
 import Data.Bits (countTrailingZeros, shift, xor, (.&.), (.|.))
 import Data.Char (ord)
 import Data.Map qualified as Map
-import Data.Vector.Generic qualified as VG
-import Data.Vector.Generic.Mutable qualified as VGM
-import Data.Vector.Unboxed (MVector, Vector, (!))
+import Data.Massiv.Array (Array, (!))
+import Data.Massiv.Array qualified as A
+import Data.Massiv.Array.Mutable (MArray)
+import Data.Massiv.Array.Mutable qualified as MA
 import Data.Word (Word16, Word64, Word8)
 import Text.Read (readMaybe)
 
@@ -20,8 +21,8 @@ data MoveType = Normal | Castle | EnPassant | Promotion deriving (Enum, Show)
 data Piece = Pawn | Rook | Knight | Bishop | Queen | King | Empty deriving (Enum, Show)
 data Player = White | Black deriving (Enum, Show)
 data Board = Board
-  { bitbs :: Vector Bitboard
-  , sqs :: Vector Square
+  { bitbs :: Array A.P Int Bitboard
+  , sqs :: Array A.P Int Square
   , stm :: Player
   , castle :: ((Bool, Bool), (Bool, Bool))
   , fiftyCount :: Word16
@@ -29,26 +30,26 @@ data Board = Board
   }
   deriving (Show)
 
-genMoves :: Board -> (Vector Move, Int)
+genMoves :: Board -> (Array A.P Int Move, Int)
 genMoves Board{bitbs, stm, sqs, ep} = runST go
   where
-    go :: ST s (Vector Move, Int)
+    go :: ST s (Array A.P Int Move, Int)
     go = do
-      moves <- VGM.replicate 256 0
+      moves <- MA.thawS $ A.replicate A.Seq 256 0
       len <- unfoldBitboardM (addPieceMoves moves) (bitbs ! fromEnum stm, 0)
-      (,len) <$> VG.freeze moves
+      (,len) <$> MA.freezeS moves
 
-    addPieceMoves :: MVector s Move -> Int -> Int -> ST s Int
+    addPieceMoves :: MArray s A.P Int Move -> Int -> Int -> ST s Int
     addPieceMoves moves sq ind = do
-      let (colorRaw, piece) = squareInfo $ sqs ! sq
+      let (piece, colorRaw) = squareInfo $ sqs ! sq
           color = fromEnum colorRaw
-          lookupRes = lookupMoves piece sq
+          lookupRes = moveLookups ! (fromEnum piece, sq)
           canMoveTo = case piece of
             Pawn -> lookupRes .&. (bitbs ! (1 - color) .|. maybe 0 (shift 1 . fromIntegral) ep)
             _ -> lookupRes
       unfoldBitboardM
         ( \lsb l -> do
-            VGM.write moves l $ newMove sq lsb Rook Normal
+            MA.write_ moves l $ newMove sq lsb Rook Normal
             return (l + 1)
         )
         (canMoveTo, ind)
@@ -82,28 +83,28 @@ parseFen fen = splitFen (words fen) >>= parseInfo
       Just $ Board bitbs sqs stm castle (read fiftyCount) ep
     parseInfo _ = Nothing
 
-    parsePlacement :: String -> ST s (Maybe (Vector Bitboard, Vector Square))
+    parsePlacement :: String -> ST s (Maybe (Array A.P Int Bitboard, Array A.P Int Square))
     parsePlacement s = do
-      bitbs <- VGM.replicate 8 0
-      sqs <- VGM.replicate 64 $ square White Empty
+      bitbs <- MA.thawS $ A.replicate A.Seq 8 0
+      sqs <- MA.thawS $ A.replicate A.Seq 64 $ square White Empty
       finalCoord <- foldM (accumPlacement (bitbs, sqs)) (Just (0, 7)) s
       case finalCoord of
         Nothing -> return Nothing
         Just _ -> do
-          frozenBitbs <- VG.freeze bitbs
-          frozenSqs <- VG.freeze sqs
+          frozenBitbs <- MA.freezeS bitbs
+          frozenSqs <- MA.freezeS sqs
           return (Just (frozenBitbs, frozenSqs))
 
-    accumPlacement :: (MVector s Bitboard, MVector s Square) -> Maybe (Int, Int) -> Char -> ST s (Maybe (Int, Int))
+    accumPlacement :: (MArray s A.P Int Bitboard, MArray s A.P Int Square) -> Maybe (Int, Int) -> Char -> ST s (Maybe (Int, Int))
     accumPlacement _ Nothing _ = return Nothing
     accumPlacement (bitbs, sqs) (Just (x, y)) c =
       case (c, readMaybe [c], Map.lookup c charPiece) of
         ('/', _, _) -> return $ Just (0, y - 1)
         (_, Just dx, _) -> return $ Just (x + dx, y)
         (_, _, Just (color, piece)) -> do
-          VGM.modify bitbs (.|. shift 1 (posFromCoord (x, y))) (fromEnum piece + 2)
-          VGM.modify bitbs (.|. shift 1 (posFromCoord (x, y))) (fromEnum color)
-          VGM.write sqs (posFromCoord (x, y)) (square color piece)
+          MA.modify_ bitbs (return . (.|. shift 1 (posFromCoord (x, y)))) (fromEnum piece + 2)
+          MA.modify_ bitbs (return . (.|. shift 1 (posFromCoord (x, y)))) (fromEnum color)
+          MA.write_ sqs (posFromCoord (x, y)) (square color piece)
           return $ Just (x + 1, y)
         _ -> return Nothing
 
@@ -130,9 +131,9 @@ parseFen fen = splitFen (words fen) >>= parseInfo
     splitFen _ = Nothing
 
 square :: Player -> Piece -> Square
-square c p = fromIntegral $ fromEnum c .|. shift (fromEnum p) 1
+square c p = fromIntegral $ shift (fromEnum p) 1 .|. fromEnum c
 
-squareInfo :: Square -> (Player, Piece)
+squareInfo :: Square -> (Piece, Player)
 squareInfo s = (toEnum $ fromIntegral $ shift s (-1), toEnum $ fromIntegral $ s .&. 1)
 
 newMove :: Int -> Int -> Piece -> MoveType -> Move
@@ -173,18 +174,18 @@ poplsb :: Bitboard -> Maybe Int
 poplsb 0 = Nothing
 poplsb bb = Just $ countTrailingZeros bb
 
-lookupMoves :: Piece -> Int -> Bitboard
-lookupMoves piece sq = moveLookups ! (64 * fromEnum piece + sq)
-
-moveLookups :: Vector Bitboard
-moveLookups = foldr (VG.++) VG.empty [pawnMoves, rookXrays, knightMoves, bishopXrays, queenXrays, kingMoves]
+moveLookups :: Array A.P (Int, Int) Bitboard
+moveLookups =
+  A.makeArray A.Seq (A.Sz (1 + fromEnum King, 64)) (\(p, sq) -> lookupList !! p ! sq)
   where
-    pawnMoves = VG.generate 64 $ \i -> foldr (tryDiff 0 i) 0 [(dx, 1) | dx <- [-1, 1]]
-    rookXrays = VG.generate 64 $ \i -> traverseDirs 0 i [(0, 1), (1, 0), (0, -1), (-1, 0)]
-    knightMoves = VG.generate 64 $ \i -> foldr (tryDiff 0 i) 0 [(dx, dy) | dx <- [-1, -2, 1, 2], dy <- [-1, -2, 1, 2], abs dx /= abs dy]
-    bishopXrays = VG.generate 64 $ \i -> traverseDirs 0 i [(1, 1), (1, -1), (-1, 1), (-1, -1)]
-    queenXrays = VG.zipWith (.|.) bishopXrays rookXrays
-    kingMoves = VG.generate 64 $ \i -> foldr (tryDiff 0 i) 0 [(dx, dy) | dx <- [-1, 0, 1], dy <- [-1, 0, 1], (dx, dy) /= (0, 0)]
+    lookupList = [pawnMoves, rookXrays, knightMoves, bishopXrays, queenXrays, kingMoves]
+    pawnMoves, rookXrays, knightMoves, bishopXrays, queenXrays, kingMoves :: Array A.P Int Bitboard
+    pawnMoves = A.makeArray A.Seq 64 $ \i -> foldr (tryDiff 0 i) 0 [(dx, 1) | dx <- [-1, 1]]
+    rookXrays = A.makeArray A.Seq 64 $ \i -> traverseDirs 0 i [(0, 1), (1, 0), (0, -1), (-1, 0)]
+    knightMoves = A.makeArray A.Seq 64 $ \i -> foldr (tryDiff 0 i) 0 [(dx, dy) | dx <- [-1, -2, 1, 2], dy <- [-1, -2, 1, 2], abs dx /= abs dy]
+    bishopXrays = A.makeArray A.Seq 64 $ \i -> traverseDirs 0 i [(1, 1), (1, -1), (-1, 1), (-1, -1)]
+    queenXrays = A.convert $ A.zipWith (.|.) bishopXrays rookXrays
+    kingMoves = A.makeArray A.Seq 64 $ \i -> foldr (tryDiff 0 i) 0 [(dx, dy) | dx <- [-1, 0, 1], dy <- [-1, 0, 1], (dx, dy) /= (0, 0)]
 
 traverseDirs :: Bitboard -> Int -> [(Int, Int)] -> Bitboard
 traverseDirs blockers start = foldr (\d acc -> foldr (tryDiff blockers start . (d ***)) acc [1 .. 7]) 0
