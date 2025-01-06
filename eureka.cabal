@@ -1,0 +1,23 @@
+cabal-version:      3.0
+name:               eureka
+version:            0.1.0.0
+license:            BSD-3-Clause
+author:             FbWdw
+maintainer:         archimj@proton.me
+build-type:         Simple
+
+library
+    -- ghc-options:      -Wall -O2 -threaded -fprof-auto "-with-rtsopts=-N -p -s -hT" -mbmi2
+    ghc-options:      -Wall -O2
+    exposed-modules:  Board
+    build-depends:    base ^>=4.18.2.1, containers, massiv, random
+    hs-source-dirs:   src
+    default-language: GHC2021
+
+executable Eureka
+    -- ghc-options:      -Wall -prof -O2 -threaded -fprof-late "-with-rtsopts=-N -p -s -hT" -mbmi2
+    ghc-options:      -Wall -O2
+    main-is:          Main.hs
+    build-depends:    base ^>=4.18.2.1, eureka, containers, massiv, random
+    hs-source-dirs:   .
+    default-language: GHC2021
