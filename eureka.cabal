@@ -10,7 +10,7 @@ library
     -- ghc-options:      -Wall -O2 -threaded -fprof-auto "-with-rtsopts=-N -p -s -hT" -mbmi2
     ghc-options:      -Wall -O2
     exposed-modules:  Board
-    build-depends:    base ^>=4.18.2.1, containers, massiv, random
+    build-depends:    base ^>=4.18.2.1, containers, massiv, random, split
     hs-source-dirs:   src
     default-language: GHC2021
 
@@ -18,6 +18,6 @@ executable Eureka
     -- ghc-options:      -Wall -prof -O2 -threaded -fprof-late "-with-rtsopts=-N -p -s -hT" -mbmi2
     ghc-options:      -Wall -O2
     main-is:          Main.hs
-    build-depends:    base ^>=4.18.2.1, eureka, containers, massiv, random
+    build-depends:    base ^>=4.18.2.1, eureka, containers, massiv, random, split
     hs-source-dirs:   .
     default-language: GHC2021
